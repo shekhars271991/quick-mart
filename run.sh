@@ -242,7 +242,7 @@ show_help() {
     echo -e "${YELLOW}Usage:${NC} ./run.sh [command] [options]"
     echo ""
     echo -e "${YELLOW}Commands:${NC}"
-    echo -e "  ${GREEN}start${NC}           Start all services (infrastructure + RecoEngine + QuickMart)"
+        echo -e "  ${GREEN}start${NC}           Start all services (infrastructure + RecoEngine + QuickMart + Frontend)"
     echo -e "  ${GREEN}stop${NC}            Stop all services"
     echo -e "  ${GREEN}restart${NC}         Restart all services"
     echo -e "  ${GREEN}status${NC}          Show service status and health"
@@ -263,8 +263,9 @@ show_help() {
     echo -e "  ${BLUE}./run.sh restart${NC}      # Restart everything"
     echo ""
     echo -e "${YELLOW}Service URLs:${NC}"
-    echo -e "  ${BLUE}RecoEngine API:${NC}      http://localhost:8000/docs"
-    echo -e "  ${BLUE}QuickMart Backend:${NC}   http://localhost:3010/docs"
+        echo -e "  ${BLUE}RecoEngine API:${NC}      http://localhost:8000/docs"
+        echo -e "  ${BLUE}QuickMart Backend:${NC}   http://localhost:3010/docs"
+        echo -e "  ${BLUE}QuickMart Frontend:${NC}  http://localhost:3000"
 }
 
 # Main script logic

@@ -1,0 +1,36 @@
+# QuickMart Frontend Microservice
+# Uses external shared infrastructure services from base docker-compose
+
+services:
+  quickmart-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quickmart_frontend_app
+    ports:
+      - "3000:80"  # Expose frontend on port 3000
+    environment:
+      - NODE_ENV=production
+    networks:
+      - quickmart_shared_network
+    restart: unless-stopped
+    depends_on:
+      - quickmart-backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Reference to backend service (external)
+  quickmart-backend:
+    external_links:
+      - quickmart_backend_api:quickmart-backend
+    networks:
+      - quickmart_shared_network
+
+networks:
+  quickmart_shared_network:
+    external: true
+    name: quickmart_shared_network
