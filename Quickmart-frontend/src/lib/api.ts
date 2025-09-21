@@ -47,14 +47,32 @@ api.interceptors.response.use(
     },
     (error) => {
         if (error.response?.status === 401) {
-            // Clear auth data on unauthorized
-            localStorage.removeItem('access_token')
-            localStorage.removeItem('user')
-            window.location.href = '/login'
+            // Only redirect to login if not already on login/register pages
+            const currentPath = window.location.pathname
+            const isAuthPage = currentPath === '/login' || currentPath === '/register'
+
+            if (!isAuthPage) {
+                // Clear auth data and redirect only if not on auth pages
+                localStorage.removeItem('access_token')
+                localStorage.removeItem('user')
+                window.location.href = '/login'
+            }
+            // If on auth page, let the component handle the error
         } else if (error.response?.status >= 500) {
             toast.error('Server error. Please try again later.')
         } else if (error.response?.data?.detail) {
-            toast.error(error.response.data.detail)
+            // Handle different types of error details
+            const detail = error.response.data.detail
+            if (typeof detail === 'string') {
+                toast.error(detail)
+            } else if (Array.isArray(detail) && detail.length > 0) {
+                // Handle validation errors (422 status)
+                const firstError = detail[0]
+                const message = firstError?.msg || 'Validation error'
+                toast.error(message)
+            } else {
+                toast.error('Request failed')
+            }
         } else if (error.message) {
             toast.error(error.message)
         }
@@ -65,20 +83,29 @@ api.interceptors.response.use(
 // API Methods
 export const authApi = {
     login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-        const formData = new FormData()
-        formData.append('username', credentials.email)
-        formData.append('password', credentials.password)
-
-        const response = await api.post('/api/auth/login', formData, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+        const response = await api.post('/api/auth/login', {
+            email: credentials.email,
+            password: credentials.password,
         })
         return response.data
     },
 
     register: async (data: RegisterData): Promise<ApiResponse<User>> => {
-        const response = await api.post('/api/auth/register', data)
+        // Transform data to match backend UserCreate model structure
+        const payload = {
+            email: data.email,
+            password: data.password,
+            profile: {
+                name: data.name,
+                age: data.age,
+                location: data.location,
+            },
+            preferences: {
+                favorite_categories: [],
+                notification_enabled: true,
+            },
+        }
+        const response = await api.post('/api/auth/register', payload)
         return response.data
     },
 
@@ -96,7 +123,15 @@ export const authApi = {
 export const productsApi = {
     getProducts: async (params?: SearchParams & ProductFilter): Promise<PaginatedResponse<Product>> => {
         const response = await api.get('/api/products', { params })
-        return response.data
+        // Transform backend response to match frontend interface
+        const backendData = response.data
+        return {
+            items: backendData.products,
+            total: backendData.total,
+            page: backendData.page,
+            limit: backendData.limit,
+            pages: Math.ceil(backendData.total / backendData.limit)
+        }
     },
 
     getProduct: async (id: string): Promise<Product> => {
@@ -108,17 +143,33 @@ export const productsApi = {
         const response = await api.get('/api/products/search', {
             params: { q: query, ...params },
         })
-        return response.data
+        // Transform backend response to match frontend interface
+        const backendData = response.data
+        return {
+            items: backendData.products,
+            total: backendData.total,
+            page: backendData.page,
+            limit: backendData.limit,
+            pages: Math.ceil(backendData.total / backendData.limit)
+        }
     },
 
     getCategories: async (): Promise<Category[]> => {
-        const response = await api.get('/api/products/categories')
+        const response = await api.get('/api/products/categories/')
         return response.data
     },
 
     getProductsByCategory: async (category: string, params?: SearchParams): Promise<PaginatedResponse<Product>> => {
         const response = await api.get(`/api/products/category/${category}`, { params })
-        return response.data
+        // Transform backend response to match frontend interface
+        const backendData = response.data
+        return {
+            items: backendData.products,
+            total: backendData.total,
+            page: backendData.page,
+            limit: backendData.limit,
+            pages: Math.ceil(backendData.total / backendData.limit)
+        }
     },
 }
 

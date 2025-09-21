@@ -52,7 +52,11 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Form */}
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+                <form
+                    className="mt-8 space-y-6"
+                    onSubmit={handleSubmit(onSubmit)}
+                    noValidate
+                >
                     <div className="space-y-4">
                         {/* Name */}
                         <div>

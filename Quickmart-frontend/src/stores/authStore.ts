@@ -45,7 +45,22 @@ export const useAuthStore = create<AuthState>()(
                     return true
                 } catch (error: unknown) {
                     set({ isLoading: false })
-                    const message = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Login failed'
+
+                    // Handle different error types
+                    const errorObj = error as { response?: { data?: { detail?: string | object[] } } }
+                    let message = 'Login failed'
+
+                    if (errorObj.response?.data?.detail) {
+                        const detail = errorObj.response.data.detail
+                        if (typeof detail === 'string') {
+                            message = detail
+                        } else if (Array.isArray(detail) && detail.length > 0) {
+                            // Handle validation errors array
+                            const firstError = detail[0] as { msg?: string }
+                            message = firstError?.msg || 'Validation error'
+                        }
+                    }
+
                     toast.error(message)
                     return false
                 }
@@ -61,7 +76,22 @@ export const useAuthStore = create<AuthState>()(
                     return true
                 } catch (error: unknown) {
                     set({ isLoading: false })
-                    const message = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Registration failed'
+
+                    // Handle different error types
+                    const errorObj = error as { response?: { data?: { detail?: string | object[] } } }
+                    let message = 'Registration failed'
+
+                    if (errorObj.response?.data?.detail) {
+                        const detail = errorObj.response.data.detail
+                        if (typeof detail === 'string') {
+                            message = detail
+                        } else if (Array.isArray(detail) && detail.length > 0) {
+                            // Handle validation errors array
+                            const firstError = detail[0] as { msg?: string }
+                            message = firstError?.msg || 'Validation error'
+                        }
+                    }
+
                     toast.error(message)
                     return false
                 }
@@ -92,7 +122,21 @@ export const useAuthStore = create<AuthState>()(
                     toast.success('Profile updated successfully')
                     return true
                 } catch (error: unknown) {
-                    const message = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Profile update failed'
+                    // Handle different error types
+                    const errorObj = error as { response?: { data?: { detail?: string | object[] } } }
+                    let message = 'Profile update failed'
+
+                    if (errorObj.response?.data?.detail) {
+                        const detail = errorObj.response.data.detail
+                        if (typeof detail === 'string') {
+                            message = detail
+                        } else if (Array.isArray(detail) && detail.length > 0) {
+                            // Handle validation errors array
+                            const firstError = detail[0] as { msg?: string }
+                            message = firstError?.msg || 'Validation error'
+                        }
+                    }
+
                     toast.error(message)
                     return false
                 }

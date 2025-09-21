@@ -26,10 +26,15 @@ export default function LoginPage() {
     }, [isAuthenticated, navigate, location])
 
     const onSubmit = async (data: LoginCredentials) => {
-        const success = await login(data)
-        if (success) {
-            const from = location.state?.from?.pathname || '/'
-            navigate(from, { replace: true })
+        try {
+            const success = await login(data)
+            if (success) {
+                const from = location.state?.from?.pathname || '/'
+                navigate(from, { replace: true })
+            }
+        } catch (error) {
+            // Error is already handled by the auth store and API interceptor
+            console.error('Login error:', error)
         }
     }
 
@@ -59,7 +64,11 @@ export default function LoginPage() {
                 </div>
 
                 {/* Form */}
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+                <form
+                    className="mt-8 space-y-6"
+                    onSubmit={handleSubmit(onSubmit)}
+                    noValidate
+                >
                     <div className="space-y-4">
                         {/* Email */}
                         <div>
