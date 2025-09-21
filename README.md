@@ -189,7 +189,7 @@ NODE_ENV=development
 ### Health Endpoints
 - **Aerospike**: `asinfo -h localhost -p 3000 -v build`
 - **RecoEngine**: `http://localhost:8000/health`
-- **QuickMart**: `http://localhost:3001/health` (when implemented)
+- **QuickMart**: `http://localhost:3010/health`
 
 ### Service Dependencies
 - QuickMart Backend depends on Aerospike and RecoEngine

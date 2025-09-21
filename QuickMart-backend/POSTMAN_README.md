@@ -20,7 +20,7 @@ This directory contains a comprehensive Postman collection for testing the Quick
 ### 2. Set Environment
 1. Click the environment dropdown (top right)
 2. Select **"QuickMart Environment"**
-3. Verify the `base_url` is set to `http://localhost:3001`
+3. Verify the `base_url` is set to `http://localhost:3010`
 
 ### 3. Start Services
 ```bash
@@ -119,7 +119,7 @@ cd ../QuickMart-backend && docker-compose up -d     # Start QuickMart Backend
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `base_url` | QuickMart Backend URL | `http://localhost:3001` |
+| `base_url` | QuickMart Backend URL | `http://localhost:3010` |
 | `reco_engine_url` | RecoEngine API URL | `http://localhost:8000` |
 | `access_token` | JWT authentication token | Auto-set by login |
 | `user_id` | Current user ID | Auto-set by login |
@@ -154,7 +154,7 @@ cd ../QuickMart-backend && docker-compose up -d     # Start QuickMart Backend
 
 **❌ Connection Refused**
 - Ensure QuickMart Backend is running: `docker ps`
-- Check port 3001 is available: `lsof -i :3001`
+- Check port 3010 is available: `lsof -i :3010`
 - Verify environment `base_url` is correct
 
 **❌ Authentication Failed**
@@ -195,7 +195,7 @@ To test the full integration:
 
 ## 📚 Additional Resources
 
-- **API Documentation**: `http://localhost:3001/docs` (Swagger UI)
+- **API Documentation**: `http://localhost:3010/docs` (Swagger UI)
 - **RecoEngine APIs**: Import `RecoEngine-featurestore/Churn_Prediction_APIs.postman_collection.json`
 - **Test Scripts**: Use `test_quickmart_backend.py` for automated testing
 

@@ -475,7 +475,7 @@ JWT_SECRET=your_jwt_secret
 SESSION_TIMEOUT=3600
 
 # Application
-PORT=3001
+PORT=3010
 NODE_ENV=development
 ```
 

@@ -21,13 +21,7 @@ class DatabaseManager:
         """Connect to Aerospike database"""
         try:
             config = {
-                'hosts': [(settings.AEROSPIKE_HOST, settings.AEROSPIKE_PORT)],
-                'policies': {
-                    'timeout': 1000,
-                    'key': aerospike.POLICY_KEY_SEND,
-                    'retry': aerospike.POLICY_RETRY_ONCE,
-                    'exists': aerospike.POLICY_EXISTS_CREATE_OR_REPLACE
-                }
+                'hosts': [(settings.AEROSPIKE_HOST, settings.AEROSPIKE_PORT)]
             }
             
             self.client = aerospike.client(config)
@@ -64,13 +58,30 @@ class DatabaseManager:
         """Get current timestamp"""
         return datetime.utcnow().isoformat()
     
+    # Data transformation helpers
+    
+    def _prepare_data_for_storage(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Prepare data for Aerospike storage - convert to JSON-compatible format"""
+        import json
+        
+        # Convert Pydantic models and complex objects to JSON-serializable format
+        json_str = json.dumps(data, default=str)  # default=str handles datetime, enums, etc.
+        json_data = json.loads(json_str)
+        
+        # Store in a single bin called 'data' to avoid bin name length limitations
+        return {"data": json_data}
+    
     # CRUD Operations
     
     async def put(self, set_name: str, key: str, data: Dict[str, Any]) -> bool:
         """Insert or update a record"""
         try:
             key_tuple = (self.namespace, set_name, key)
-            self.client.put(key_tuple, data)
+            bins = self._prepare_data_for_storage(data)
+            
+            # Use write policy like in the documentation example
+            write_policy = {"key": aerospike.POLICY_KEY_SEND}
+            self.client.put(key=key_tuple, bins=bins, policy=write_policy)
             return True
         except Exception as e:
             logger.error(f"Failed to put record {key} in {set_name}: {e}")
@@ -80,8 +91,9 @@ class DatabaseManager:
         """Get a record by key"""
         try:
             key_tuple = (self.namespace, set_name, key)
-            (key_tuple, metadata, record) = self.client.get(key_tuple)
-            return record
+            (key_tuple, metadata, bins) = self.client.get(key=key_tuple)
+            # Extract the data from the 'data' bin
+            return bins.get('data') if bins else None
         except aerospike.exception.RecordNotFound:
             return None
         except Exception as e:
@@ -110,11 +122,13 @@ class DatabaseManager:
                 scan.results(limit)
             
             def callback(input_tuple):
-                key, metadata, record = input_tuple
-                if record:
-                    # Add the key to the record for reference
-                    record['_key'] = key[2] if len(key) > 2 else None
-                    records.append(record)
+                key, metadata, bins = input_tuple
+                if bins and 'data' in bins:
+                    # Extract data and add the key for reference
+                    data = bins['data']
+                    if isinstance(data, dict):
+                        data['_key'] = key[2] if len(key) > 2 else None
+                    records.append(data)
             
             scan.foreach(callback)
             return records
@@ -131,10 +145,12 @@ class DatabaseManager:
             query.where(aerospike.predicates.equals(field, value))
             
             def callback(input_tuple):
-                key, metadata, record = input_tuple
-                if record:
-                    record['_key'] = key[2] if len(key) > 2 else None
-                    records.append(record)
+                key, metadata, bins = input_tuple
+                if bins and 'data' in bins:
+                    data = bins['data']
+                    if isinstance(data, dict):
+                        data['_key'] = key[2] if len(key) > 2 else None
+                    records.append(data)
             
             query.foreach(callback)
             return records

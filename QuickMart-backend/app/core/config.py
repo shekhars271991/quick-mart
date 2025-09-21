@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     RECO_ENGINE_TIMEOUT: int = 30
     
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3010"]
     
     # Data Initialization
     INIT_DATA_ON_STARTUP: bool = True
