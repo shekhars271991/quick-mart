@@ -10,37 +10,34 @@ A comprehensive e-commerce platform that integrates machine learning-based churn
 
 ## 🚀 Quick Start
 
-### 1. Start Shared Infrastructure
+### Simple One-Command Startup
 ```bash
-# Start shared services (Aerospike database)
-docker-compose up -d
+# Start all services (infrastructure + RecoEngine + QuickMart Backend)
+./run.sh start
 
+# Check service status
+./run.sh status
+
+# Run health checks
+./run.sh test
 ```
 
-### 2. Start RecoEngine Service
+### Manual Step-by-Step (Alternative)
 ```bash
-# Start RecoEngine microservice (uses shared Aerospike)
-cd RecoEngine-featurestore
-docker-compose up -d
+# 1. Start shared infrastructure
+./run.sh infra
 
-# Check health
-curl http://localhost:8000/health
+# 2. Start RecoEngine
+./run.sh reco
+
+# 3. Start QuickMart Backend
+./run.sh quickmart
+
+# 4. Train the model (optional)
+./run.sh train
 ```
 
-### 3. Train Churn Prediction Model
-```bash
-# Generate synthetic data and train model (from RecoEngine directory)
-docker-compose --profile training up training-service
-```
-
-### 4. Start QuickMart Backend (when implemented)
-```bash
-# Start QuickMart backend microservice
-cd ../QuickMart-backend
-docker-compose up -d
-```
-
-### 5. Test the System
+### Test the System
 ```bash
 # Test RecoEngine prediction
 curl -X POST "http://localhost:8000/ingest/profile" \
@@ -49,9 +46,9 @@ curl -X POST "http://localhost:8000/ingest/profile" \
 
 curl -X POST "http://localhost:8000/predict/test_001"
 
-# Test QuickMart Backend (when implemented)
-curl http://localhost:3001/api/products
-curl http://localhost:3001/api/coupons/available
+# Test QuickMart Backend
+curl http://localhost:3010/api/products
+curl http://localhost:3010/api/coupons/available
 ```
 
 ## 📡 Services & Ports
@@ -65,7 +62,7 @@ curl http://localhost:3001/api/coupons/available
 | Service | Port | Location | Description |
 |---------|------|----------|-------------|
 | RecoEngine API | 8000 | `RecoEngine-featurestore/` | Churn prediction and nudge generation |
-| QuickMart Backend | 3001 | `QuickMart-backend/` | E-commerce API (authentication, catalog, coupons) |
+| QuickMart Backend | 3010 | `QuickMart-backend/` | E-commerce API (authentication, catalog, coupons) |
 
 ## 🗃️ Database Namespaces
 
