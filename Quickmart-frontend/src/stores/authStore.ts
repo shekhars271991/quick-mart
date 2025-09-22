@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi } from '../lib/api'
 import type { AuthResponse, LoginCredentials, RegisterData, User } from '../types'
+import { getUserDisplayName } from '../utils/userUtils'
 
 interface AuthState {
     user: User | null
@@ -30,9 +31,12 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true })
                 try {
                     const response: AuthResponse = await authApi.login(credentials)
+                    console.log('Login response:', response)
+                    console.log('User data:', response.user)
 
                     // Store token and user data
                     localStorage.setItem('access_token', response.access_token)
+                    localStorage.setItem('user', JSON.stringify(response.user))
 
                     set({
                         user: response.user,
@@ -41,7 +45,7 @@ export const useAuthStore = create<AuthState>()(
                         isLoading: false,
                     })
 
-                    toast.success(`Welcome back, ${response.user.profile.name}!`)
+                    toast.success(`Welcome back, ${getUserDisplayName(response.user)}!`)
                     return true
                 } catch (error: unknown) {
                     set({ isLoading: false })
@@ -149,16 +153,20 @@ export const useAuthStore = create<AuthState>()(
                 if (token && userStr) {
                     try {
                         const user = JSON.parse(userStr)
+                        console.log('Initializing auth with user:', user)
                         set({
                             user,
                             token,
                             isAuthenticated: true,
                         })
                     } catch (error) {
+                        console.error('Error parsing user data from localStorage:', error)
                         // Clear invalid data
                         localStorage.removeItem('access_token')
                         localStorage.removeItem('user')
                     }
+                } else {
+                    console.log('No auth data found in localStorage')
                 }
             },
         }),

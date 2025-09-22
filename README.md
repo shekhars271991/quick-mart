@@ -184,6 +184,35 @@ JWT_SECRET=your_jwt_secret_here
 NODE_ENV=development
 ```
 
+## 👤 Sample Application Users
+
+The QuickMart Backend automatically creates 5 sample users for testing and demonstration. These users can login and use all application features.
+
+### Pre-loaded Test Users
+
+| User ID | Email | Password | Name | Age | Location | Loyalty Tier | Preferred Categories | Preferred Brands |
+|---------|-------|----------|------|-----|----------|--------------|---------------------|------------------|
+| `user_001` | `john.doe@example.com` | `john.doe` | John Doe | 28 | New York, NY | Gold | Electronics, Books & Media | Apple, Samsung |
+| `user_002` | `jane.smith@example.com` | `jane.smith` | Jane Smith | 34 | Los Angeles, CA | Platinum | Clothing, Home & Garden | Nike, Dyson |
+| `user_003` | `mike.johnson@example.com` | `mike.johnson` | Mike Johnson | 22 | Chicago, IL | Bronze | Sports & Fitness, Electronics | Peloton, Sony |
+| `user_004` | `sarah.wilson@example.com` | `sarah.wilson` | Sarah Wilson | 45 | Houston, TX | Silver | Home & Garden, Books & Media | Instant Pot, Levi's |
+| `user_005` | `demo@quickmart.com` | `demo` | Demo User | 30 | San Francisco, CA | Gold | Electronics, Clothing | Apple, Nike |
+
+### Quick Login Test
+```bash
+# Login as demo user
+curl -X POST "http://localhost:3010/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "demo@quickmart.com", "password": "demo"}'
+
+# Login as John Doe  
+curl -X POST "http://localhost:3010/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "john.doe@example.com", "password": "john.doe"}'
+```
+
+**Note**: Password is always the part before @ in the email address.
+
 ## 📈 Monitoring & Health Checks
 
 ### Health Endpoints

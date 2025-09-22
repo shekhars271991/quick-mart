@@ -1,0 +1,77 @@
+[
+    {
+        "email": "john.doe@example.com",
+        "name": "John Doe",
+        "age": 28,
+        "location": "New York, NY",
+        "loyalty_tier": "gold",
+        "categories": [
+            "electronics",
+            "books_media"
+        ],
+        "brands": [
+            "Apple",
+            "Samsung"
+        ]
+    },
+    {
+        "email": "jane.smith@example.com",
+        "name": "Jane Smith",
+        "age": 34,
+        "location": "Los Angeles, CA",
+        "loyalty_tier": "platinum",
+        "categories": [
+            "clothing",
+            "home_garden"
+        ],
+        "brands": [
+            "Nike",
+            "Dyson"
+        ]
+    },
+    {
+        "email": "mike.johnson@example.com",
+        "name": "Mike Johnson",
+        "age": 22,
+        "location": "Chicago, IL",
+        "loyalty_tier": "bronze",
+        "categories": [
+            "sports_fitness",
+            "electronics"
+        ],
+        "brands": [
+            "Peloton",
+            "Sony"
+        ]
+    },
+    {
+        "email": "sarah.wilson@example.com",
+        "name": "Sarah Wilson",
+        "age": 45,
+        "location": "Houston, TX",
+        "loyalty_tier": "silver",
+        "categories": [
+            "home_garden",
+            "books_media"
+        ],
+        "brands": [
+            "Instant Pot",
+            "Levi's"
+        ]
+    },
+    {
+        "email": "demo@quickmart.com",
+        "name": "Demo User",
+        "age": 30,
+        "location": "San Francisco, CA",
+        "loyalty_tier": "gold",
+        "categories": [
+            "electronics",
+            "clothing"
+        ],
+        "brands": [
+            "Apple",
+            "Nike"
+        ]
+    }
+]

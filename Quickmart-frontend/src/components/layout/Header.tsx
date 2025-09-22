@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
+import { getUserDisplayName } from '../../utils/userUtils'
 
 export default function Header() {
     const navigate = useNavigate()
@@ -112,7 +113,7 @@ export default function Header() {
                                         <User className="w-5 h-5 text-primary-600" />
                                     </div>
                                     <span className="hidden sm:block text-sm font-medium text-gray-700">
-                                        {user?.profile.name}
+                                        {getUserDisplayName(user)}
                                     </span>
                                 </button>
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
+import './utils/debugAuth'; // Import debug utilities
 
 // Layout Components
 import ProtectedRoute from './components/auth/ProtectedRoute'

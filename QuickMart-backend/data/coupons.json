@@ -1,0 +1,62 @@
+[
+    {
+        "code": "WELCOME10",
+        "name": "Welcome Discount",
+        "description": "10% off your first order",
+        "discount_type": "percentage",
+        "discount_value": 10,
+        "minimum_order_value": 50,
+        "maximum_discount": 100,
+        "usage_limit": 1000,
+        "days_valid": 365
+    },
+    {
+        "code": "SAVE20",
+        "name": "Save $20",
+        "description": "$20 off orders over $100",
+        "discount_type": "fixed",
+        "discount_value": 20,
+        "minimum_order_value": 100,
+        "usage_limit": 500,
+        "days_valid": 90
+    },
+    {
+        "code": "FREESHIP",
+        "name": "Free Shipping",
+        "description": "Free shipping on any order",
+        "discount_type": "free_shipping",
+        "discount_value": 0,
+        "minimum_order_value": 25,
+        "usage_limit": 2000,
+        "days_valid": 180
+    },
+    {
+        "code": "ELECTRONICS15",
+        "name": "Electronics Sale",
+        "description": "15% off electronics",
+        "discount_type": "percentage",
+        "discount_value": 15,
+        "minimum_order_value": 200,
+        "maximum_discount": 150,
+        "usage_limit": 300,
+        "days_valid": 30,
+        "categories": [
+            "electronics"
+        ]
+    },
+    {
+        "code": "SUMMER25",
+        "name": "Summer Sale",
+        "description": "25% off summer collection",
+        "discount_type": "percentage",
+        "discount_value": 25,
+        "minimum_order_value": 75,
+        "maximum_discount": 200,
+        "usage_limit": 1000,
+        "days_valid": 60,
+        "categories": [
+            "clothing",
+            "sports_fitness"
+        ]
+    }
+]

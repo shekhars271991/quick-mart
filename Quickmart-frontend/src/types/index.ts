@@ -7,12 +7,17 @@ export interface ApiResponse<T = unknown> {
 
 // User Types
 export interface User {
-    user_id: string
-    email: string
-    profile: UserProfile
-    preferences: UserPreferences
-    created_at: string
-    is_active: boolean
+    user_id?: string
+    _id?: string  // Support for different ID formats
+    email?: string
+    name?: string  // Support for direct name property
+    profile?: UserProfile
+    preferences?: UserPreferences
+    created_at?: string
+    is_active?: boolean
+    phoneNumber?: string  // Support for additional fields
+    verified?: boolean
+    nameProvided?: boolean
 }
 
 export interface UserProfile {

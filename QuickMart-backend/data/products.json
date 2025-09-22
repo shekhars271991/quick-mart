@@ -1,0 +1,232 @@
+[
+    {
+        "name": "iPhone 15 Pro",
+        "category": "electronics",
+        "subcategory": "smartphones",
+        "price": 999.99,
+        "original_price": 1099.99,
+        "brand": "Apple",
+        "description": "Latest iPhone with advanced camera system and A17 Pro chip",
+        "specifications": {
+            "storage": "128GB",
+            "color": "Natural Titanium",
+            "display": "6.1-inch"
+        },
+        "stock_quantity": 50,
+        "rating": 4.8,
+        "review_count": 1250,
+        "tags": [
+            "smartphone",
+            "apple",
+            "premium",
+            "5g"
+        ],
+        "is_featured": true
+    },
+    {
+        "name": "Samsung Galaxy S24",
+        "category": "electronics",
+        "subcategory": "smartphones",
+        "price": 899.99,
+        "original_price": 999.99,
+        "brand": "Samsung",
+        "description": "Flagship Android phone with AI-powered features",
+        "specifications": {
+            "storage": "256GB",
+            "color": "Phantom Black",
+            "display": "6.2-inch"
+        },
+        "stock_quantity": 75,
+        "rating": 4.6,
+        "review_count": 890,
+        "tags": [
+            "smartphone",
+            "samsung",
+            "android",
+            "ai"
+        ],
+        "is_featured": true
+    },
+    {
+        "name": "MacBook Air M3",
+        "category": "electronics",
+        "subcategory": "laptops",
+        "price": 1299.99,
+        "brand": "Apple",
+        "description": "Ultra-thin laptop with M3 chip for exceptional performance",
+        "specifications": {
+            "processor": "M3",
+            "memory": "8GB",
+            "storage": "256GB SSD"
+        },
+        "stock_quantity": 30,
+        "rating": 4.9,
+        "review_count": 567,
+        "tags": [
+            "laptop",
+            "apple",
+            "m3",
+            "ultrabook"
+        ],
+        "is_featured": true
+    },
+    {
+        "name": "Sony WH-1000XM5",
+        "category": "electronics",
+        "subcategory": "headphones",
+        "price": 349.99,
+        "original_price": 399.99,
+        "brand": "Sony",
+        "description": "Industry-leading noise canceling wireless headphones",
+        "specifications": {
+            "type": "Over-ear",
+            "battery": "30 hours",
+            "connectivity": "Bluetooth 5.2"
+        },
+        "stock_quantity": 100,
+        "rating": 4.7,
+        "review_count": 2340,
+        "tags": [
+            "headphones",
+            "sony",
+            "noise-canceling",
+            "wireless"
+        ]
+    },
+    {
+        "name": "Nike Air Max 270",
+        "category": "clothing",
+        "subcategory": "shoes",
+        "price": 129.99,
+        "original_price": 149.99,
+        "brand": "Nike",
+        "description": "Comfortable running shoes with Max Air unit",
+        "specifications": {
+            "size_range": "6-13",
+            "color": "Black/White",
+            "material": "Mesh upper"
+        },
+        "stock_quantity": 200,
+        "rating": 4.4,
+        "review_count": 1890,
+        "tags": [
+            "shoes",
+            "nike",
+            "running",
+            "comfortable"
+        ]
+    },
+    {
+        "name": "Levi's 501 Original Jeans",
+        "category": "clothing",
+        "subcategory": "jeans",
+        "price": 79.99,
+        "brand": "Levi's",
+        "description": "Classic straight-leg jeans with authentic fit",
+        "specifications": {
+            "fit": "Straight",
+            "material": "100% Cotton",
+            "wash": "Medium Blue"
+        },
+        "stock_quantity": 150,
+        "rating": 4.5,
+        "review_count": 3456,
+        "tags": [
+            "jeans",
+            "levis",
+            "classic",
+            "denim"
+        ]
+    },
+    {
+        "name": "Instant Pot Duo 7-in-1",
+        "category": "home_garden",
+        "subcategory": "kitchen",
+        "price": 89.99,
+        "original_price": 119.99,
+        "brand": "Instant Pot",
+        "description": "Multi-functional electric pressure cooker",
+        "specifications": {
+            "capacity": "6 quarts",
+            "functions": "7-in-1",
+            "material": "Stainless steel"
+        },
+        "stock_quantity": 80,
+        "rating": 4.6,
+        "review_count": 12000,
+        "tags": [
+            "kitchen",
+            "pressure-cooker",
+            "instant-pot",
+            "cooking"
+        ],
+        "is_featured": true
+    },
+    {
+        "name": "Dyson V15 Detect",
+        "category": "home_garden",
+        "subcategory": "cleaning",
+        "price": 649.99,
+        "brand": "Dyson",
+        "description": "Cordless vacuum with laser dust detection",
+        "specifications": {
+            "type": "Cordless",
+            "runtime": "60 minutes",
+            "filtration": "HEPA"
+        },
+        "stock_quantity": 45,
+        "rating": 4.8,
+        "review_count": 789,
+        "tags": [
+            "vacuum",
+            "dyson",
+            "cordless",
+            "laser-detection"
+        ]
+    },
+    {
+        "name": "The Psychology of Money",
+        "category": "books_media",
+        "subcategory": "books",
+        "price": 14.99,
+        "brand": "Harriman House",
+        "description": "Timeless lessons on wealth, greed, and happiness by Morgan Housel",
+        "specifications": {
+            "pages": "256",
+            "format": "Paperback",
+            "language": "English"
+        },
+        "stock_quantity": 300,
+        "rating": 4.7,
+        "review_count": 5670,
+        "tags": [
+            "book",
+            "finance",
+            "psychology",
+            "bestseller"
+        ]
+    },
+    {
+        "name": "Peloton Bike+",
+        "category": "sports_fitness",
+        "subcategory": "exercise",
+        "price": 2495.00,
+        "brand": "Peloton",
+        "description": "Premium indoor cycling bike with rotating touchscreen",
+        "specifications": {
+            "screen": "23.8-inch HD",
+            "resistance": "Magnetic",
+            "weight": "140 lbs"
+        },
+        "stock_quantity": 15,
+        "rating": 4.3,
+        "review_count": 234,
+        "tags": [
+            "exercise-bike",
+            "peloton",
+            "fitness",
+            "premium"
+        ],
+        "is_featured": true
+    }
+]

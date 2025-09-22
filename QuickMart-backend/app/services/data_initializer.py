@@ -1,9 +1,11 @@
 """
 Data initialization service for QuickMart Backend
-Loads test data on application startup
+Loads test data on application startup from JSON files
 """
 
+import json
 import logging
+import os
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
@@ -22,13 +24,28 @@ class DataInitializer:
     """Service to initialize test data"""
     
     def __init__(self):
-        self.categories_data = [
-            {"category_id": "electronics", "name": "Electronics", "description": "Electronic devices and gadgets"},
-            {"category_id": "clothing", "name": "Clothing", "description": "Fashion and apparel"},
-            {"category_id": "home_garden", "name": "Home & Garden", "description": "Home improvement and garden supplies"},
-            {"category_id": "books_media", "name": "Books & Media", "description": "Books, movies, and entertainment"},
-            {"category_id": "sports_fitness", "name": "Sports & Fitness", "description": "Sports equipment and fitness gear"}
-        ]
+        # Get the directory where this file is located
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Data directory is relative to the backend root
+        self.data_dir = os.path.join(os.path.dirname(os.path.dirname(self.current_dir)), "data")
+        
+    def _load_json_data(self, filename: str) -> List[Dict[str, Any]]:
+        """Load data from JSON file"""
+        file_path = os.path.join(self.data_dir, filename)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                logger.info(f"Loaded {len(data)} items from {filename}")
+                return data
+        except FileNotFoundError:
+            logger.error(f"Data file not found: {file_path}")
+            raise
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in {file_path}: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Error loading {file_path}: {e}")
+            raise
     
     async def initialize_on_startup(self):
         """Initialize data on application startup if database is empty"""
@@ -66,7 +83,9 @@ class DataInitializer:
         """Load product categories"""
         logger.info("Loading categories...")
         
-        for cat_data in self.categories_data:
+        categories_data = self._load_json_data("categories.json")
+        
+        for cat_data in categories_data:
             category = Category(
                 category_id=cat_data["category_id"],
                 name=cat_data["name"],
@@ -77,103 +96,13 @@ class DataInitializer:
             
             await database_manager.put("categories", category.category_id, category.dict())
         
-        logger.info(f"Loaded {len(self.categories_data)} categories")
+        logger.info(f"Loaded {len(categories_data)} categories")
     
     async def _load_products(self):
         """Load test products"""
         logger.info("Loading products...")
         
-        products_data = [
-            # Electronics
-            {
-                "name": "iPhone 15 Pro", "category": "electronics", "subcategory": "smartphones",
-                "price": 999.99, "original_price": 1099.99, "brand": "Apple",
-                "description": "Latest iPhone with advanced camera system and A17 Pro chip",
-                "specifications": {"storage": "128GB", "color": "Natural Titanium", "display": "6.1-inch"},
-                "stock_quantity": 50, "rating": 4.8, "review_count": 1250,
-                "tags": ["smartphone", "apple", "premium", "5g"], "is_featured": True
-            },
-            {
-                "name": "Samsung Galaxy S24", "category": "electronics", "subcategory": "smartphones",
-                "price": 899.99, "original_price": 999.99, "brand": "Samsung",
-                "description": "Flagship Android phone with AI-powered features",
-                "specifications": {"storage": "256GB", "color": "Phantom Black", "display": "6.2-inch"},
-                "stock_quantity": 75, "rating": 4.6, "review_count": 890,
-                "tags": ["smartphone", "samsung", "android", "ai"], "is_featured": True
-            },
-            {
-                "name": "MacBook Air M3", "category": "electronics", "subcategory": "laptops",
-                "price": 1299.99, "brand": "Apple",
-                "description": "Ultra-thin laptop with M3 chip for exceptional performance",
-                "specifications": {"processor": "M3", "memory": "8GB", "storage": "256GB SSD"},
-                "stock_quantity": 30, "rating": 4.9, "review_count": 567,
-                "tags": ["laptop", "apple", "m3", "ultrabook"], "is_featured": True
-            },
-            {
-                "name": "Sony WH-1000XM5", "category": "electronics", "subcategory": "headphones",
-                "price": 349.99, "original_price": 399.99, "brand": "Sony",
-                "description": "Industry-leading noise canceling wireless headphones",
-                "specifications": {"type": "Over-ear", "battery": "30 hours", "connectivity": "Bluetooth 5.2"},
-                "stock_quantity": 100, "rating": 4.7, "review_count": 2340,
-                "tags": ["headphones", "sony", "noise-canceling", "wireless"]
-            },
-            
-            # Clothing
-            {
-                "name": "Nike Air Max 270", "category": "clothing", "subcategory": "shoes",
-                "price": 129.99, "original_price": 149.99, "brand": "Nike",
-                "description": "Comfortable running shoes with Max Air unit",
-                "specifications": {"size_range": "6-13", "color": "Black/White", "material": "Mesh upper"},
-                "stock_quantity": 200, "rating": 4.4, "review_count": 1890,
-                "tags": ["shoes", "nike", "running", "comfortable"]
-            },
-            {
-                "name": "Levi's 501 Original Jeans", "category": "clothing", "subcategory": "jeans",
-                "price": 79.99, "brand": "Levi's",
-                "description": "Classic straight-leg jeans with authentic fit",
-                "specifications": {"fit": "Straight", "material": "100% Cotton", "wash": "Medium Blue"},
-                "stock_quantity": 150, "rating": 4.5, "review_count": 3456,
-                "tags": ["jeans", "levis", "classic", "denim"]
-            },
-            
-            # Home & Garden
-            {
-                "name": "Instant Pot Duo 7-in-1", "category": "home_garden", "subcategory": "kitchen",
-                "price": 89.99, "original_price": 119.99, "brand": "Instant Pot",
-                "description": "Multi-functional electric pressure cooker",
-                "specifications": {"capacity": "6 quarts", "functions": "7-in-1", "material": "Stainless steel"},
-                "stock_quantity": 80, "rating": 4.6, "review_count": 12000,
-                "tags": ["kitchen", "pressure-cooker", "instant-pot", "cooking"], "is_featured": True
-            },
-            {
-                "name": "Dyson V15 Detect", "category": "home_garden", "subcategory": "cleaning",
-                "price": 649.99, "brand": "Dyson",
-                "description": "Cordless vacuum with laser dust detection",
-                "specifications": {"type": "Cordless", "runtime": "60 minutes", "filtration": "HEPA"},
-                "stock_quantity": 45, "rating": 4.8, "review_count": 789,
-                "tags": ["vacuum", "dyson", "cordless", "laser-detection"]
-            },
-            
-            # Books & Media
-            {
-                "name": "The Psychology of Money", "category": "books_media", "subcategory": "books",
-                "price": 14.99, "brand": "Harriman House",
-                "description": "Timeless lessons on wealth, greed, and happiness by Morgan Housel",
-                "specifications": {"pages": "256", "format": "Paperback", "language": "English"},
-                "stock_quantity": 300, "rating": 4.7, "review_count": 5670,
-                "tags": ["book", "finance", "psychology", "bestseller"]
-            },
-            
-            # Sports & Fitness
-            {
-                "name": "Peloton Bike+", "category": "sports_fitness", "subcategory": "exercise",
-                "price": 2495.00, "brand": "Peloton",
-                "description": "Premium indoor cycling bike with rotating touchscreen",
-                "specifications": {"screen": "23.8-inch HD", "resistance": "Magnetic", "weight": "140 lbs"},
-                "stock_quantity": 15, "rating": 4.3, "review_count": 234,
-                "tags": ["exercise-bike", "peloton", "fitness", "premium"], "is_featured": True
-            }
-        ]
+        products_data = self._load_json_data("products.json")
         
         for i, product_data in enumerate(products_data):
             product_id = f"prod_{str(i+1).zfill(3)}"
@@ -215,41 +144,7 @@ class DataInitializer:
         """Load available coupons"""
         logger.info("Loading available coupons...")
         
-        coupons_data = [
-            {
-                "code": "WELCOME10", "name": "Welcome Discount", 
-                "description": "10% off your first order",
-                "discount_type": DiscountType.PERCENTAGE, "discount_value": 10,
-                "minimum_order_value": 50, "maximum_discount": 100,
-                "usage_limit": 1000, "days_valid": 365
-            },
-            {
-                "code": "SAVE20", "name": "Save $20", 
-                "description": "$20 off orders over $100",
-                "discount_type": DiscountType.FIXED, "discount_value": 20,
-                "minimum_order_value": 100, "usage_limit": 500, "days_valid": 90
-            },
-            {
-                "code": "FREESHIP", "name": "Free Shipping", 
-                "description": "Free shipping on any order",
-                "discount_type": DiscountType.FREE_SHIPPING, "discount_value": 0,
-                "minimum_order_value": 25, "usage_limit": 2000, "days_valid": 180
-            },
-            {
-                "code": "ELECTRONICS15", "name": "Electronics Sale", 
-                "description": "15% off electronics",
-                "discount_type": DiscountType.PERCENTAGE, "discount_value": 15,
-                "minimum_order_value": 200, "maximum_discount": 150,
-                "usage_limit": 300, "days_valid": 30, "categories": ["electronics"]
-            },
-            {
-                "code": "SUMMER25", "name": "Summer Sale", 
-                "description": "25% off summer collection",
-                "discount_type": DiscountType.PERCENTAGE, "discount_value": 25,
-                "minimum_order_value": 75, "maximum_discount": 200,
-                "usage_limit": 1000, "days_valid": 60, "categories": ["clothing", "sports_fitness"]
-            }
-        ]
+        coupons_data = self._load_json_data("coupons.json")
         
         for i, coupon_data in enumerate(coupons_data):
             coupon_id = f"coup_{str(i+1).zfill(3)}"
@@ -257,12 +152,20 @@ class DataInitializer:
             valid_from = datetime.utcnow()
             valid_until = valid_from + timedelta(days=coupon_data["days_valid"])
             
+            # Convert string discount_type to enum
+            discount_type_map = {
+                "percentage": DiscountType.PERCENTAGE,
+                "fixed": DiscountType.FIXED,
+                "free_shipping": DiscountType.FREE_SHIPPING
+            }
+            discount_type = discount_type_map.get(coupon_data["discount_type"], DiscountType.PERCENTAGE)
+            
             coupon = Coupon(
                 coupon_id=coupon_id,
                 code=coupon_data["code"],
                 name=coupon_data["name"],
                 description=coupon_data["description"],
-                discount_type=coupon_data["discount_type"],
+                discount_type=discount_type,
                 discount_value=coupon_data["discount_value"],
                 minimum_order_value=coupon_data["minimum_order_value"],
                 maximum_discount=coupon_data.get("maximum_discount"),
@@ -284,33 +187,7 @@ class DataInitializer:
         """Load test users"""
         logger.info("Loading test users...")
         
-        test_users = [
-            {
-                "email": "john.doe@example.com", "name": "John Doe", "age": 28,
-                "location": "New York, NY", "loyalty_tier": "gold",
-                "categories": ["electronics", "books_media"], "brands": ["Apple", "Samsung"]
-            },
-            {
-                "email": "jane.smith@example.com", "name": "Jane Smith", "age": 34,
-                "location": "Los Angeles, CA", "loyalty_tier": "platinum",
-                "categories": ["clothing", "home_garden"], "brands": ["Nike", "Dyson"]
-            },
-            {
-                "email": "mike.johnson@example.com", "name": "Mike Johnson", "age": 22,
-                "location": "Chicago, IL", "loyalty_tier": "bronze",
-                "categories": ["sports_fitness", "electronics"], "brands": ["Peloton", "Sony"]
-            },
-            {
-                "email": "sarah.wilson@example.com", "name": "Sarah Wilson", "age": 45,
-                "location": "Houston, TX", "loyalty_tier": "silver",
-                "categories": ["home_garden", "books_media"], "brands": ["Instant Pot", "Levi's"]
-            },
-            {
-                "email": "demo@quickmart.com", "name": "Demo User", "age": 30,
-                "location": "San Francisco, CA", "loyalty_tier": "gold",
-                "categories": ["electronics", "clothing"], "brands": ["Apple", "Nike"]
-            }
-        ]
+        test_users = self._load_json_data("users.json")
         
         for i, user_data in enumerate(test_users):
             user_id = f"user_{str(i+1).zfill(3)}"

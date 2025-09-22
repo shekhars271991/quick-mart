@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { productsApi } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
+import { getUserDisplayName } from '../../utils/userUtils'
 
 export default function ProductsPage() {
     const [searchParams] = useSearchParams()
@@ -74,7 +75,7 @@ export default function ProductsPage() {
             {isAuthenticated && user && (
                 <div className="mb-8 p-6 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200">
                     <h1 className="text-2xl font-bold text-primary-900 mb-2">
-                        Welcome back, {user.profile.name}! 👋
+                        Welcome back, {getUserDisplayName(user)}! 👋
                     </h1>
                     <p className="text-primary-700">
                         Discover personalized products and exclusive deals curated just for you.

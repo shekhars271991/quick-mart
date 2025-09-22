@@ -1,0 +1,27 @@
+[
+    {
+        "category_id": "electronics",
+        "name": "Electronics",
+        "description": "Electronic devices and gadgets"
+    },
+    {
+        "category_id": "clothing",
+        "name": "Clothing",
+        "description": "Fashion and apparel"
+    },
+    {
+        "category_id": "home_garden",
+        "name": "Home & Garden",
+        "description": "Home improvement and garden supplies"
+    },
+    {
+        "category_id": "books_media",
+        "name": "Books & Media",
+        "description": "Books, movies, and entertainment"
+    },
+    {
+        "category_id": "sports_fitness",
+        "name": "Sports & Fitness",
+        "description": "Sports equipment and fitness gear"
+    }
+]
