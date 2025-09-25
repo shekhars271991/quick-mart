@@ -55,7 +55,19 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Product Image */}
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                    {product.images && product.images.length > 0 ? (
+                        <img
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                        />
+                    ) : null}
+                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center hidden">
                         <ShoppingBag className="w-24 h-24 text-gray-400" />
                     </div>
                 </div>
@@ -74,8 +86,8 @@ export default function ProductDetailPage() {
                                 <Star
                                     key={i}
                                     className={`w-5 h-5 ${i < Math.floor(product.rating)
-                                            ? 'text-yellow-400 fill-current'
-                                            : 'text-gray-300'
+                                        ? 'text-yellow-400 fill-current'
+                                        : 'text-gray-300'
                                         }`}
                                 />
                             ))}

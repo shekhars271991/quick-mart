@@ -21,7 +21,8 @@
             "premium",
             "5g"
         ],
-        "is_featured": true
+        "is_featured": true,
+        "image": "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-1inch-naturaltitanium"
     },
     {
         "name": "Samsung Galaxy S24",
@@ -45,7 +46,8 @@
             "android",
             "ai"
         ],
-        "is_featured": true
+        "is_featured": true,
+        "image": "https://images.samsung.com/is/image/samsung/p6pim/in/sm-s921bzkginu/gallery/in-galaxy-s24-5g-sm-s921-484120-sm-s921bzkginu-540982746"
     },
     {
         "name": "MacBook Air M3",
@@ -68,7 +70,8 @@
             "m3",
             "ultrabook"
         ],
-        "is_featured": true
+        "is_featured": true,
+        "image": "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/macbook-air-m3-hero"
     },
     {
         "name": "Sony WH-1000XM5",
@@ -91,7 +94,8 @@
             "sony",
             "noise-canceling",
             "wireless"
-        ]
+        ],
+        "image": "https://m.media-amazon.com/images/I/61+9xxdgP-L._AC_SL1500_.jpg"
     },
     {
         "name": "Nike Air Max 270",
@@ -114,7 +118,8 @@
             "nike",
             "running",
             "comfortable"
-        ]
+        ],
+        "image": "https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/kig82axwllw2cbcsnzib/air-max-270-mens-shoes-KkLcGR.png"
     },
     {
         "name": "Levi's 501 Original Jeans",
@@ -136,7 +141,8 @@
             "levis",
             "classic",
             "denim"
-        ]
+        ],
+        "image": "https://lsco.scene7.com/is/image/lsco/005010114-front-pdp.jpg"
     },
     {
         "name": "Instant Pot Duo 7-in-1",
@@ -160,7 +166,8 @@
             "instant-pot",
             "cooking"
         ],
-        "is_featured": true
+        "is_featured": true,
+        "image": "https://m.media-amazon.com/images/I/81plXGd6wCL._AC_SL1500_.jpg"
     },
     {
         "name": "Dyson V15 Detect",
@@ -182,7 +189,8 @@
             "dyson",
             "cordless",
             "laser-detection"
-        ]
+        ],
+        "image": "https://m.media-amazon.com/images/I/71J1Fu7l+RL._AC_SL1500_.jpg"
     },
     {
         "name": "The Psychology of Money",
@@ -204,7 +212,8 @@
             "finance",
             "psychology",
             "bestseller"
-        ]
+        ],
+        "image": "https://m.media-amazon.com/images/I/71g2ednj0JL._AC_SL1500_.jpg"
     },
     {
         "name": "Peloton Bike+",
@@ -227,6 +236,53 @@
             "fitness",
             "premium"
         ],
-        "is_featured": true
+        "is_featured": true,
+        "image": "https://m.media-amazon.com/images/I/71g1ebkQhPL._AC_SL1500_.jpg"
+    },
+    {
+        "name": "GoPro HERO12 Black",
+        "category": "electronics",
+        "subcategory": "cameras",
+        "price": 399.99,
+        "brand": "GoPro",
+        "description": "Waterproof action camera with 5.3K video and HyperSmooth stabilization",
+        "specifications": {
+            "resolution": "5.3K",
+            "waterproof": "33ft",
+            "battery": "Enduro"
+        },
+        "stock_quantity": 60,
+        "rating": 4.7,
+        "review_count": 980,
+        "tags": [
+            "camera",
+            "action",
+            "gopro",
+            "4k"
+        ],
+        "image": "https://m.media-amazon.com/images/I/71b5bhfxRML._AC_SL1500_.jpg"
+    },
+    {
+        "name": "Kindle Paperwhite 11th Gen",
+        "category": "books_media",
+        "subcategory": "e-readers",
+        "price": 139.99,
+        "brand": "Amazon",
+        "description": "Waterproof e-reader with 6.8-inch display and adjustable warm light",
+        "specifications": {
+            "storage": "8GB",
+            "battery": "Up to 10 weeks",
+            "display": "300 ppi"
+        },
+        "stock_quantity": 90,
+        "rating": 4.8,
+        "review_count": 13450,
+        "tags": [
+            "ebook",
+            "kindle",
+            "reader",
+            "books"
+        ],
+        "image": "https://m.media-amazon.com/images/I/61Oa0j2VQeL._AC_SL1000_.jpg"
     }
 ]

@@ -18,6 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
+# Copy data directory
+COPY data/ ./data/
+
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash quickmart
 RUN chown -R quickmart:quickmart /app

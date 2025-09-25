@@ -98,7 +98,19 @@ export default function ProductsPage() {
                             <div key={product.product_id} className="card hover:shadow-lg transition-shadow duration-300 border-primary-200">
                                 <Link to={`/products/${product.product_id}`}>
                                     <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden relative">
-                                        <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
+                                        {product.images && product.images.length > 0 ? (
+                                            <img
+                                                src={product.images[0]}
+                                                alt={product.name}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.style.display = 'none';
+                                                    target.nextElementSibling?.classList.remove('hidden');
+                                                }}
+                                            />
+                                        ) : null}
+                                        <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center hidden">
                                             <ShoppingBag className="w-12 h-12 text-primary-400" />
                                         </div>
                                         <div className="absolute top-2 left-2">
@@ -241,7 +253,19 @@ export default function ProductsPage() {
                         <div key={product.product_id} className="card hover:shadow-lg transition-shadow duration-300">
                             <Link to={`/products/${product.product_id}`}>
                                 <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
-                                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                    {product.images && product.images.length > 0 ? (
+                                        <img
+                                            src={product.images[0]}
+                                            alt={product.name}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.style.display = 'none';
+                                                target.nextElementSibling?.classList.remove('hidden');
+                                            }}
+                                        />
+                                    ) : null}
+                                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center hidden">
                                         <ShoppingBag className="w-12 h-12 text-gray-400" />
                                     </div>
                                 </div>

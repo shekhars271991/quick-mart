@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "quickmart-backend-apis",
 		"name": "QuickMart Backend APIs",
-		"description": "Comprehensive API collection for QuickMart e-commerce backend with authentication, product catalog, and coupon management",
+		"description": "Comprehensive API collection for QuickMart e-commerce backend with authentication, product catalog, coupon management, and admin data loading",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "quickmart"
 	},
@@ -672,6 +672,146 @@
 			"name": "Admin",
 			"item": [
 				{
+					"name": "Load All Data",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/load-data",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"load-data"
+							]
+						},
+						"description": "Load all data (categories, products, users) from JSON files into Aerospike"
+					},
+					"response": []
+				},
+				{
+					"name": "Load Categories",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/load-categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"load-categories"
+							]
+						},
+						"description": "Load categories from categories.json into Aerospike"
+					},
+					"response": []
+				},
+				{
+					"name": "Load Products",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/load-products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"load-products"
+							]
+						},
+						"description": "Load products from products.json into Aerospike"
+					},
+					"response": []
+				},
+				{
+					"name": "Load Users",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/load-users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"load-users"
+							]
+						},
+						"description": "Load users from users.json into Aerospike"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"categories"
+							]
+						},
+						"description": "Get all categories from Aerospike"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"products"
+							]
+						},
+						"description": "Get all products from Aerospike"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							]
+						},
+						"description": "Get all users from Aerospike (without passwords)"
+					},
+					"response": []
+				},
+				{
 					"name": "Get Data Status",
 					"request": {
 						"method": "GET",
@@ -687,49 +827,12 @@
 								"data-status"
 							]
 						},
-						"description": "Check data initialization status"
-					}
-				},
-				{
-					"name": "Initialize Data",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/admin/init-data",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"init-data"
-							]
-						},
-						"description": "Initialize test data (products, users, coupons)"
-					}
-				},
-				{
-					"name": "Reset Data",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/admin/reset-data",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"reset-data"
-							]
-						},
-						"description": "Reset all test data"
-					}
+						"description": "Check data initialization status and record counts"
+					},
+					"response": []
 				}
 			],
-			"description": "Administrative endpoints for data management"
+			"description": "Administrative endpoints for data management and loading"
 		}
 	],
 	"event": [
