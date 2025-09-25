@@ -38,8 +38,8 @@ class CouponCreate(BaseModel):
     description: str
     discount_type: DiscountType
     discount_value: float
-    minimum_order_value: float = 0
-    maximum_discount: Optional[float] = None
+    min_order_val: float = 0
+    max_discount: Optional[float] = None
     usage_limit: Optional[int] = None
     valid_from: datetime
     valid_until: datetime
@@ -54,8 +54,8 @@ class Coupon(BaseModel):
     description: str
     discount_type: DiscountType
     discount_value: float
-    minimum_order_value: float = 0
-    maximum_discount: Optional[float] = None
+    min_order_val: float = 0
+    max_discount: Optional[float] = None
     usage_limit: Optional[int] = None
     usage_count: int = 0
     valid_from: datetime

@@ -5,8 +5,8 @@
         "description": "10% off your first order",
         "discount_type": "percentage",
         "discount_value": 10,
-        "minimum_order_value": 50,
-        "maximum_discount": 100,
+        "min_order_val": 50,
+        "max_discount": 100,
         "usage_limit": 1000,
         "days_valid": 365
     },
@@ -16,7 +16,7 @@
         "description": "$20 off orders over $100",
         "discount_type": "fixed",
         "discount_value": 20,
-        "minimum_order_value": 100,
+        "min_order_val": 100,
         "usage_limit": 500,
         "days_valid": 90
     },
@@ -26,7 +26,7 @@
         "description": "Free shipping on any order",
         "discount_type": "free_shipping",
         "discount_value": 0,
-        "minimum_order_value": 25,
+        "min_order_val": 25,
         "usage_limit": 2000,
         "days_valid": 180
     },
@@ -36,8 +36,8 @@
         "description": "15% off electronics",
         "discount_type": "percentage",
         "discount_value": 15,
-        "minimum_order_value": 200,
-        "maximum_discount": 150,
+        "min_order_val": 200,
+        "max_discount": 150,
         "usage_limit": 300,
         "days_valid": 30,
         "categories": [
@@ -50,8 +50,8 @@
         "description": "25% off summer collection",
         "discount_type": "percentage",
         "discount_value": 25,
-        "minimum_order_value": 75,
-        "maximum_discount": 200,
+        "min_order_val": 75,
+        "max_discount": 200,
         "usage_limit": 1000,
         "days_valid": 60,
         "categories": [

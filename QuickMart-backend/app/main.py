@@ -15,7 +15,6 @@ sys.path.append(str(Path(__file__).parent))
 
 from core.config import settings
 from core.database import database_manager
-from services.data_initializer import DataInitializer
 from api.auth import auth_router
 from api.products import products_router
 from api.coupons import coupons_router
@@ -42,16 +41,8 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Failed to connect to database: {e}")
         raise
     
-    # Initialize test data if database is empty
-    try:
-        data_initializer = DataInitializer()
-        await data_initializer.initialize_on_startup()
-        logger.info("✅ Data initialization completed")
-    except Exception as e:
-        logger.error(f"⚠️ Data initialization failed: {e}")
-        # Don't fail startup for data initialization issues
     
-    logger.info("🎉 QuickMart Backend started successfully!")
+    logger.info("🎉 QuickMart Backend started successfully! (Data initialization disabled - use admin endpoints if needed)")
     
     yield
     

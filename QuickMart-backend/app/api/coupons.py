@@ -152,10 +152,10 @@ async def validate_coupon(
             )
         
         # Check minimum order value
-        if order_total < coupon.minimum_order_value:
+        if order_total < coupon.min_order_val:
             return CouponValidation(
                 is_valid=False,
-                message=f"Minimum order value is ${coupon.minimum_order_value:.2f}"
+                message=f"Minimum order value is ${coupon.min_order_val:.2f}"
             )
         
         # Calculate discount
@@ -164,8 +164,8 @@ async def validate_coupon(
         
         if coupon.discount_type == "percentage":
             discount_amount = order_total * (coupon.discount_value / 100)
-            if coupon.maximum_discount:
-                discount_amount = min(discount_amount, coupon.maximum_discount)
+            if coupon.max_discount:
+                discount_amount = min(discount_amount, coupon.max_discount)
         elif coupon.discount_type == "fixed":
             discount_amount = min(coupon.discount_value, order_total)
         elif coupon.discount_type == "free_shipping":

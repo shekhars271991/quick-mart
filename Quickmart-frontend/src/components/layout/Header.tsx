@@ -53,39 +53,41 @@ export default function Header() {
                         </Link>
                     </div>
 
-                    {/* Search Bar */}
-                    <div className="flex-1 max-w-lg mx-8">
-                        <form onSubmit={handleSearch} className="relative">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <input
-                                    type="text"
-                                    placeholder="Search products..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                />
-                            </div>
-                        </form>
-                    </div>
+                    {/* Search Bar - Only show for authenticated users */}
+                    {isAuthenticated && (
+                        <div className="flex-1 max-w-lg mx-8">
+                            <form onSubmit={handleSearch} className="relative">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search products..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    />
+                                </div>
+                            </form>
+                        </div>
+                    )}
 
-                    {/* Navigation Links */}
-                    <nav className="hidden md:flex items-center space-x-8">
-                        <Link
-                            to="/products"
-                            className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
-                        >
-                            Products
-                        </Link>
-                        {isAuthenticated && (
+                    {/* Navigation Links - Only show for authenticated users */}
+                    {isAuthenticated && (
+                        <nav className="hidden md:flex items-center space-x-8">
+                            <Link
+                                to="/products"
+                                className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+                            >
+                                Products
+                            </Link>
                             <Link
                                 to="/coupons"
                                 className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
                             >
                                 Coupons
                             </Link>
-                        )}
-                    </nav>
+                        </nav>
+                    )}
 
                     {/* Right Side Actions */}
                     <div className="flex items-center space-x-4">
@@ -172,18 +174,20 @@ export default function Header() {
                             </div>
                         )}
 
-                        {/* Mobile Menu Button */}
-                        <button
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="md:hidden p-2 text-gray-700 hover:text-primary-600 transition-colors"
-                        >
-                            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                        </button>
+                        {/* Mobile Menu Button - Only show for authenticated users */}
+                        {isAuthenticated && (
+                            <button
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                className="md:hidden p-2 text-gray-700 hover:text-primary-600 transition-colors"
+                            >
+                                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                {/* Mobile Menu */}
-                {isMenuOpen && (
+                {/* Mobile Menu - Only show for authenticated users */}
+                {isMenuOpen && isAuthenticated && (
                     <div className="md:hidden border-t border-gray-200 py-4">
                         <div className="flex flex-col space-y-4">
                             <Link
@@ -193,15 +197,13 @@ export default function Header() {
                             >
                                 Products
                             </Link>
-                            {isAuthenticated && (
-                                <Link
-                                    to="/coupons"
-                                    onClick={() => setIsMenuOpen(false)}
-                                    className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
-                                >
-                                    Coupons
-                                </Link>
-                            )}
+                            <Link
+                                to="/coupons"
+                                onClick={() => setIsMenuOpen(false)}
+                                className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+                            >
+                                Coupons
+                            </Link>
                         </div>
                     </div>
                 )}
