@@ -62,6 +62,7 @@ RecoEngine-featurestore/models/*.joblib
 RecoEngine-featurestore/models/*.pkl
 RecoEngine-featurestore/models_tmp/
 RecoEngine-featurestore/api-service/churn_model.joblib
+RecoEngine-featurestore/api-service/churn_model_metrics.json
 
 # === Generated Data ===
 RecoEngine-featurestore/data/synthetic_*.csv
