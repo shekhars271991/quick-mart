@@ -264,8 +264,8 @@
         "comment": "Steady middle-tier customer with moderate engagement. Some customer service needs and returns indicate potential satisfaction issues. Medium churn risk."
     },
     {
-        "email": "demo@quickmart.com",
-        "name": "Demo User",
+        "email": "shekhar@quickmart.com",
+        "name": "shekhar",
         "age": 30,
         "location": "San Francisco, CA",
         "loyalty_tier": "gold",

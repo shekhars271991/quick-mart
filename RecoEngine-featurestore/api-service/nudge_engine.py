@@ -234,6 +234,7 @@ class NudgeEngine:
             quickmart_url = os.getenv("QUICKMART_API_URL", "http://localhost:3010")
             
             # Select coupon based on churn reasons and probability
+            # Duplicate prevention is handled at the backend level
             coupon_id = self._select_coupon_based_on_reasons(churn_reasons, churn_probability)
             
             # Generate unique nudge ID for tracking
@@ -261,7 +262,11 @@ class NudgeEngine:
                 logger.info(f"Coupon assignment response: {response.status_code} - {response.text}")
                 
                 if response.status_code == 200:
-                    logger.info(f"Successfully assigned coupon {coupon_id} to user {user_id}")
+                    response_data = response.json()
+                    if response_data.get("duplicate"):
+                        logger.info(f"Coupon {coupon_id} already assigned to user {user_id}, skipping")
+                    else:
+                        logger.info(f"Successfully assigned new coupon {coupon_id} to user {user_id}")
                     return True
                 else:
                     logger.error(f"Failed to assign coupon: {response.status_code} - {response.text}")
@@ -273,13 +278,30 @@ class NudgeEngine:
             logger.error(f"Traceback: {traceback.format_exc()}")
             return False
     
+    async def _get_user_existing_coupons(self, user_id: str, quickmart_url: str) -> List[str]:
+        """Get list of coupon codes already assigned to the user"""
+        try:
+            # For now, we'll use a simple approach - check if user has been assigned coupons before
+            # by maintaining a simple in-memory cache or checking assignment history
+            # This is a simplified implementation - in production, you'd want proper user session management
+            
+            # Since we don't have user authentication context here, we'll use a different approach:
+            # Check the assignment history by looking at recent assignments for this user
+            # For now, return empty list and let the assignment proceed
+            # The actual duplicate prevention will happen at the database level in QuickMart
+            
+            logger.info(f"Checking existing coupons for user {user_id} (simplified check)")
+            return []  # Simplified approach - let QuickMart handle duplicates
+                    
+        except Exception as e:
+            logger.warning(f"Error getting existing coupons for user {user_id}: {e}")
+            return []  # Return empty list on error to allow coupon assignment
+    
     def _select_coupon_based_on_reasons(self, churn_reasons: List[str], churn_probability: float) -> str:
         """Select the most appropriate coupon based on churn reasons and probability"""
-        if not churn_reasons:
-            return "WELCOME_BACK20"  # Default fallback
         
         # Convert reasons to lowercase for matching
-        reasons_lower = [reason.lower() for reason in churn_reasons]
+        reasons_lower = [reason.lower() for reason in churn_reasons] if churn_reasons else []
         
         # Define coupon selection logic based on churn reasons
         coupon_mapping = {

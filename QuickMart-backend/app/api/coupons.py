@@ -300,6 +300,19 @@ async def assign_nudge_coupon(
 ):
     """Internal endpoint to assign a coupon from a nudge (called by RecoEngine integration)"""
     try:
+        # Check if user already has this coupon to prevent duplicates
+        existing_coupons = await database_manager.scan_set("user_coupons")
+        for existing_coupon in existing_coupons:
+            if (existing_coupon.get("user_id") == user_id and 
+                existing_coupon.get("coupon_id") == coupon_id and
+                existing_coupon.get("status") in ["available", "used"]):
+                logger.info(f"User {user_id} already has coupon {coupon_id}, skipping assignment")
+                return {
+                    "message": "Coupon already assigned to user", 
+                    "user_coupon_id": existing_coupon.get("user_coupon_id"),
+                    "duplicate": True
+                }
+        
         # Create user-specific coupon
         user_coupon_id = f"uc_{uuid.uuid4().hex[:12]}"
         
@@ -322,7 +335,11 @@ async def assign_nudge_coupon(
             )
         
         logger.info(f"Nudge coupon {coupon_id} assigned to user {user_id}")
-        return {"message": "Coupon assigned successfully", "user_coupon_id": user_coupon_id}
+        return {
+            "message": "Coupon assigned successfully", 
+            "user_coupon_id": user_coupon_id,
+            "duplicate": False
+        }
         
     except Exception as e:
         logger.error(f"Error assigning nudge coupon: {e}")
