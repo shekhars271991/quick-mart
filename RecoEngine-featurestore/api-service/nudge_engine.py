@@ -204,7 +204,13 @@ class NudgeEngine:
             # If it's a discount coupon, assign it to the user via QuickMart API
             if nudge["type"] == "Discount Coupon":
                 try:
-                    coupon_assigned = await self._assign_discount_coupon(user_id, nudge)
+                    # Get churn context from the nudge execution context
+                    churn_reasons = getattr(self, '_current_churn_reasons', [])
+                    churn_probability = getattr(self, '_current_churn_probability', 0.8)
+                    
+                    coupon_assigned = await self._assign_discount_coupon(
+                        user_id, nudge, churn_reasons, churn_probability
+                    )
                     if coupon_assigned:
                         logger.info(f"Successfully assigned discount coupon to user {user_id}")
                     else:
@@ -221,25 +227,27 @@ class NudgeEngine:
         
         return executed_nudges
     
-    async def _assign_discount_coupon(self, user_id: str, nudge: Dict[str, Any]) -> bool:
-        """Assign a discount coupon to user via QuickMart API"""
+    async def _assign_discount_coupon(self, user_id: str, nudge: Dict[str, Any], churn_reasons: List[str] = None, churn_probability: float = 0.8) -> bool:
+        """Assign a discount coupon to user via QuickMart API based on churn reasons"""
         try:
             # Use single URL from environment variable
             quickmart_url = os.getenv("QUICKMART_API_URL", "http://localhost:3010")
             
-            # Use the pre-loaded churn prevention coupon
-            coupon_id = "WELCOME_BACK20"
+            # Select coupon based on churn reasons and probability
+            coupon_id = self._select_coupon_based_on_reasons(churn_reasons, churn_probability)
             
             # Generate unique nudge ID for tracking
             import uuid
             nudge_id = f"nudge_{uuid.uuid4().hex[:8]}"
+            
+            logger.info(f"Selected coupon {coupon_id} for user {user_id} based on reasons: {churn_reasons}")
             
             # Prepare assignment data
             assignment_data = {
                 "user_id": user_id,
                 "coupon_id": coupon_id,
                 "nudge_id": nudge_id,
-                "churn_score": 0.8  # Default high churn score
+                "churn_score": churn_probability
             }
             
             logger.info(f"Assigning coupon {coupon_id} to user {user_id} via {quickmart_url}")
@@ -265,10 +273,76 @@ class NudgeEngine:
             logger.error(f"Traceback: {traceback.format_exc()}")
             return False
     
+    def _select_coupon_based_on_reasons(self, churn_reasons: List[str], churn_probability: float) -> str:
+        """Select the most appropriate coupon based on churn reasons and probability"""
+        if not churn_reasons:
+            return "WELCOME_BACK20"  # Default fallback
+        
+        # Convert reasons to lowercase for matching
+        reasons_lower = [reason.lower() for reason in churn_reasons]
+        
+        # Define coupon selection logic based on churn reasons
+        coupon_mapping = {
+            # Price sensitivity - offer percentage discount
+            "price": "SUMMER25",  # 25% off
+            "expensive": "SUMMER25",
+            "cost": "SUMMER25",
+            "discount": "SUMMER25",
+            
+            # Inactivity/engagement issues - welcome back offer
+            "inactive": "WELCOME_BACK20",  # 20% welcome back
+            "login": "WELCOME_BACK20",
+            "engagement": "WELCOME_BACK20",
+            "session": "WELCOME_BACK20",
+            
+            # Purchase behavior - fixed amount discount
+            "purchase": "SAVE20",  # $20 off orders over $100
+            "order": "SAVE20",
+            "buying": "SAVE20",
+            "transaction": "SAVE20",
+            
+            # Shipping/delivery issues - free shipping
+            "shipping": "FREESHIP",  # Free shipping
+            "delivery": "FREESHIP",
+            "fulfillment": "FREESHIP",
+            
+            # Electronics category issues - category specific
+            "electronics": "ELECTRONICS15",  # 15% off electronics
+            "tech": "ELECTRONICS15",
+            "device": "ELECTRONICS15",
+        }
+        
+        # Score each coupon based on reason matches
+        coupon_scores = {}
+        for reason in reasons_lower:
+            for keyword, coupon in coupon_mapping.items():
+                if keyword in reason:
+                    coupon_scores[coupon] = coupon_scores.get(coupon, 0) + 1
+        
+        # Select coupon with highest score
+        if coupon_scores:
+            best_coupon = max(coupon_scores.items(), key=lambda x: x[1])[0]
+            logger.info(f"Selected coupon {best_coupon} based on reason matching (scores: {coupon_scores})")
+            return best_coupon
+        
+        # Fallback based on churn probability
+        if churn_probability >= 0.9:
+            return "SUMMER25"  # Highest discount for critical risk
+        elif churn_probability >= 0.7:
+            return "WELCOME_BACK20"  # Standard welcome back
+        elif churn_probability >= 0.5:
+            return "SAVE20"  # Moderate fixed discount
+        else:
+            return "WELCOME10"  # Light discount for low risk
+    
     async def trigger_nudges(self, user_id: str, churn_probability: float, risk_segment: str, churn_reasons: List[str]) -> NudgeResponse:
         """Trigger nudges based on churn score and reasons"""
         logger.info(f"Processing nudge request for user {user_id} "
                    f"(score: {churn_probability}, segment: {risk_segment})")
+        
+        # Store churn context for coupon selection
+        self._current_churn_reasons = churn_reasons
+        self._current_churn_probability = churn_probability
         
         # Find matching rule
         matching_rule = self.find_matching_rule(churn_probability, churn_reasons)
