@@ -58,5 +58,18 @@
             "clothing",
             "sports_fitness"
         ]
+    },
+    {
+        "code": "WELCOME_BACK20",
+        "name": "Welcome Back",
+        "description": "20% off - We miss you! Come back and save on your next order",
+        "discount_type": "percentage",
+        "discount_value": 20,
+        "min_order_val": 50,
+        "max_discount": 100,
+        "usage_limit": 10000,
+        "days_valid": 30,
+        "user_specific": true,
+        "created_by_system": "churn_prevention"
     }
 ]

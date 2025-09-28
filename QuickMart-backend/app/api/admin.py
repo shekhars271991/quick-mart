@@ -10,6 +10,7 @@ from pathlib import Path
 from datetime import datetime
 import httpx
 import asyncio
+import uuid
 
 from core.database import database_manager
 from core.auth import auth_manager
@@ -64,6 +65,7 @@ async def load_all_data():
             "categories": {"loaded": 0, "total": 0, "success": False},
             "products": {"loaded": 0, "total": 0, "success": False},
             "users": {"loaded": 0, "total": 0, "success": False},
+            "coupons": {"loaded": 0, "total": 0, "success": False},
             "errors": []
         }
         
@@ -237,18 +239,78 @@ async def load_all_data():
             logger.error(f"Failed to load users: {e}")
             results["errors"].append(f"Users loading failed: {str(e)}")
         
+        # Load Coupons
+        try:
+            coupons_file = data_dir / "coupons.json"
+            if coupons_file.exists():
+                with open(coupons_file, 'r', encoding='utf-8') as f:
+                    coupons_data = json.load(f)
+                
+                logger.info(f"Loading {len(coupons_data)} coupons")
+                loaded_coupons = []
+                
+                # Import here to avoid circular imports
+                from models.coupon import Coupon
+                from datetime import timedelta
+                
+                for coupon_data in coupons_data:
+                    # Generate unique coupon ID
+                    coupon_id = f"coupon_{uuid.uuid4().hex[:12]}"
+                    
+                    # Calculate valid dates
+                    valid_from = datetime.utcnow()
+                    valid_until = valid_from + timedelta(days=coupon_data.get("days_valid", 30))
+                    
+                    coupon = Coupon(
+                        coupon_id=coupon_id,
+                        code=coupon_data["code"],
+                        name=coupon_data["name"],
+                        description=coupon_data.get("description", ""),
+                        discount_type=coupon_data["discount_type"],
+                        discount_value=coupon_data["discount_value"],
+                        min_order_val=coupon_data.get("min_order_val", 0.0),
+                        max_discount=coupon_data.get("max_discount"),
+                        usage_limit=coupon_data.get("usage_limit", 1),
+                        usage_count=0,
+                        valid_from=valid_from,
+                        valid_until=valid_until,
+                        is_active=True,
+                        applicable_categories=coupon_data.get("categories", []),
+                        applicable_products=coupon_data.get("applicable_products", []),
+                        created_at=datetime.utcnow()
+                    )
+                    
+                    success = await database_manager.store_coupon(coupon)
+                    if success:
+                        loaded_coupons.append(coupon.code)
+                
+                results["coupons"] = {
+                    "loaded": len(loaded_coupons),
+                    "total": len(coupons_data),
+                    "success": True,
+                    "items": loaded_coupons
+                }
+                logger.info(f"✅ Loaded {len(loaded_coupons)} coupons")
+            else:
+                results["errors"].append("Coupons file not found")
+                
+        except Exception as e:
+            logger.error(f"Failed to load coupons: {e}")
+            results["errors"].append(f"Coupons loading failed: {str(e)}")
+        
         # Determine overall success
         successful_loads = sum([
             results["categories"]["success"],
             results["products"]["success"], 
-            results["users"]["success"]
+            results["users"]["success"],
+            results["coupons"]["success"]
         ])
         
-        if successful_loads == 3:
+        if successful_loads == 4:
             results["message"] = "🎉 All data loaded successfully!"
             results["status"] = "complete"
         elif successful_loads > 0:
-            results["message"] = f"⚠️ Partial success: {successful_loads}/3 data types loaded"
+            results["message"] = f"⚠️ Partial success: {successful_loads}/4 data types loaded"
             results["status"] = "partial"
         else:
             results["message"] = "❌ Failed to load any data"
@@ -262,13 +324,15 @@ async def load_all_data():
         total_loaded = (
             results["categories"]["loaded"] + 
             results["products"]["loaded"] + 
-            results["users"]["loaded"]
+            results["users"]["loaded"] +
+            results["coupons"]["loaded"]
         )
         results["summary"] = {
             "total_items_loaded": total_loaded,
             "categories_loaded": results["categories"]["loaded"],
             "products_loaded": results["products"]["loaded"],
-            "users_loaded": results["users"]["loaded"]
+            "users_loaded": results["users"]["loaded"],
+            "coupons_loaded": results["coupons"]["loaded"]
         }
         
         return results

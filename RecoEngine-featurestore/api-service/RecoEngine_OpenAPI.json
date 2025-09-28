@@ -1,0 +1,1256 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Churn Prediction API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingest/profile": {
+      "post": {
+        "summary": "Ingest Profile Features",
+        "description": "Feature Ingestion API - User Profile Features",
+        "operationId": "ingest_profile_features_ingest_profile_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfileFeatures"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingest/behavior": {
+      "post": {
+        "summary": "Ingest Behavior Features",
+        "description": "Feature Ingestion API - User Behavior Features",
+        "operationId": "ingest_behavior_features_ingest_behavior_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserBehaviorFeatures"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingest/transactional": {
+      "post": {
+        "summary": "Ingest Transactional Features",
+        "description": "Feature Ingestion API - Transactional Features",
+        "operationId": "ingest_transactional_features_ingest_transactional_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionalFeatures"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingest/engagement": {
+      "post": {
+        "summary": "Ingest Engagement Features",
+        "description": "Feature Ingestion API - Engagement Features",
+        "operationId": "ingest_engagement_features_ingest_engagement_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EngagementFeatures"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingest/support": {
+      "post": {
+        "summary": "Ingest Support Features",
+        "description": "Feature Ingestion API - Support Features",
+        "operationId": "ingest_support_features_ingest_support_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportFeatures"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingest/realtime": {
+      "post": {
+        "summary": "Ingest Realtime Features",
+        "description": "Feature Ingestion API - Real-time Session Features",
+        "operationId": "ingest_realtime_features_ingest_realtime_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RealTimeSessionFeatures"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict/{user_id}": {
+      "post": {
+        "summary": "Predict Churn",
+        "description": "Churn Prediction API - Fetch features and predict churn probability",
+        "operationId": "predict_churn_predict__user_id__post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChurnPredictionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring": {
+      "get": {
+        "summary": "Get Monitoring Metrics",
+        "description": "Monitoring API - Track API performance, feature freshness, and model accuracy",
+        "operationId": "get_monitoring_metrics_monitoring_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoringMetrics"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nudge/rules": {
+      "get": {
+        "summary": "Get Nudge Rules",
+        "description": "Get all nudge rules",
+        "operationId": "get_nudge_rules_nudge_rules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nudge/rules/{rule_id}": {
+      "get": {
+        "summary": "Get Nudge Rule",
+        "description": "Get specific nudge rule by ID",
+        "operationId": "get_nudge_rule_nudge_rules__rule_id__get",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nudge/test/{user_id}": {
+      "get": {
+        "summary": "Test Nudge Rules",
+        "description": "Test which rule would match for given parameters",
+        "operationId": "test_nudge_rules_nudge_test__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "churn_probability",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Churn probability (0.0-1.0)",
+              "title": "Churn Probability"
+            },
+            "description": "Churn probability (0.0-1.0)"
+          },
+          {
+            "name": "churn_reasons",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of churn reasons",
+              "title": "Churn Reasons"
+            },
+            "description": "List of churn reasons"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/train/generate-data": {
+      "post": {
+        "summary": "Generate Training Data",
+        "description": "Generate synthetic training data using the training data generation script",
+        "operationId": "generate_training_data_train_generate_data_post",
+        "parameters": [
+          {
+            "name": "samples",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 100,
+              "description": "Number of training samples to generate",
+              "default": 1000,
+              "title": "Samples"
+            },
+            "description": "Number of training samples to generate"
+          },
+          {
+            "name": "clear_existing",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Clear existing training data before generating new",
+              "default": false,
+              "title": "Clear Existing"
+            },
+            "description": "Clear existing training data before generating new"
+          },
+          {
+            "name": "random_seed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Random seed for reproducibility",
+              "default": 42,
+              "title": "Random Seed"
+            },
+            "description": "Random seed for reproducibility"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/train/start": {
+      "post": {
+        "summary": "Start Training",
+        "description": "Start model training job using data from Aerospike",
+        "operationId": "start_training_train_start_post",
+        "parameters": [
+          {
+            "name": "test_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 0.5,
+              "minimum": 0.1,
+              "description": "Test set size (0.1-0.5)",
+              "default": 0.2,
+              "title": "Test Size"
+            },
+            "description": "Test set size (0.1-0.5)"
+          },
+          {
+            "name": "random_state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Random seed for reproducibility",
+              "default": 42,
+              "title": "Random State"
+            },
+            "description": "Random seed for reproducibility"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/train/status": {
+      "get": {
+        "summary": "Get Training Status Endpoint",
+        "description": "Get current training status and model information",
+        "operationId": "get_training_status_endpoint_train_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/train/metrics": {
+      "get": {
+        "summary": "Get Training Metrics",
+        "description": "Get detailed training metrics from the last training job",
+        "operationId": "get_training_metrics_train_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/train/data-quality": {
+      "get": {
+        "summary": "Check Data Quality",
+        "description": "Check the quality of training data in Aerospike",
+        "operationId": "check_data_quality_train_data_quality_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChurnPredictionResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "churn_probability": {
+            "type": "number",
+            "title": "Churn Probability"
+          },
+          "risk_segment": {
+            "type": "string",
+            "title": "Risk Segment"
+          },
+          "churn_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Churn Reasons"
+          },
+          "confidence_score": {
+            "type": "number",
+            "title": "Confidence Score"
+          },
+          "features_retrieved": {
+            "type": "object",
+            "title": "Features Retrieved"
+          },
+          "feature_freshness": {
+            "type": "string",
+            "title": "Feature Freshness"
+          },
+          "prediction_timestamp": {
+            "type": "string",
+            "title": "Prediction Timestamp"
+          },
+          "nudges_triggered": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nudges Triggered"
+          },
+          "nudge_rule_matched": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nudge Rule Matched"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "churn_probability",
+          "risk_segment",
+          "churn_reasons",
+          "confidence_score",
+          "features_retrieved",
+          "feature_freshness",
+          "prediction_timestamp"
+        ],
+        "title": "ChurnPredictionResponse"
+      },
+      "EngagementFeatures": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "push_open_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Push Open Rate"
+          },
+          "email_ctr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Ctr"
+          },
+          "inapp_ctr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inapp Ctr"
+          },
+          "promo_resp_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promo Resp Time"
+          },
+          "retention_resp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Resp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "EngagementFeatures"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MonitoringMetrics": {
+        "properties": {
+          "api_performance": {
+            "type": "object",
+            "title": "Api Performance"
+          },
+          "feature_freshness": {
+            "type": "object",
+            "title": "Feature Freshness"
+          },
+          "model_accuracy": {
+            "type": "object",
+            "title": "Model Accuracy"
+          },
+          "nudge_responses": {
+            "type": "object",
+            "title": "Nudge Responses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_performance",
+          "feature_freshness",
+          "model_accuracy",
+          "nudge_responses"
+        ],
+        "title": "MonitoringMetrics"
+      },
+      "RealTimeSessionFeatures": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "curr_sess_clk": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Curr Sess Clk"
+          },
+          "checkout_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkout Time"
+          },
+          "cart_no_buy": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cart No Buy"
+          },
+          "bounce_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bounce Flag"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "RealTimeSessionFeatures"
+      },
+      "SupportFeatures": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "tickets_90d": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tickets 90D"
+          },
+          "avg_ticket_res": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Ticket Res"
+          },
+          "csat_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csat Score"
+          },
+          "refund_req": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Req"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "SupportFeatures"
+      },
+      "TransactionalFeatures": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "avg_order_val": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Order Val"
+          },
+          "orders_6m": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orders 6M"
+          },
+          "purch_freq_90d": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purch Freq 90D"
+          },
+          "last_hv_purch": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Hv Purch"
+          },
+          "refund_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Rate"
+          },
+          "sub_pay_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Pay Status"
+          },
+          "discount_dep": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discount Dep"
+          },
+          "cat_spend_dist": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cat Spend Dist"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "TransactionalFeatures"
+      },
+      "UserBehaviorFeatures": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "days_last_login": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Last Login"
+          },
+          "days_last_purch": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Last Purch"
+          },
+          "sess_7d": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sess 7D"
+          },
+          "sess_30d": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sess 30D"
+          },
+          "avg_sess_dur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Sess Dur"
+          },
+          "ctr_10_sess": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ctr 10 Sess"
+          },
+          "cart_abandon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cart Abandon"
+          },
+          "wishlist_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wishlist Ratio"
+          },
+          "content_engage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Engage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "UserBehaviorFeatures"
+      },
+      "UserProfileFeatures": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "acc_age_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acc Age Days"
+          },
+          "member_dur": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Dur"
+          },
+          "loyalty_tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loyalty Tier"
+          },
+          "geo_location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geo Location"
+          },
+          "device_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Type"
+          },
+          "pref_payment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pref Payment"
+          },
+          "lang_pref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lang Pref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "UserProfileFeatures"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

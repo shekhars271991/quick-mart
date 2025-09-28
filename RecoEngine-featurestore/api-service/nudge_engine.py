@@ -201,16 +201,16 @@ class NudgeEngine:
             logger.info(f"NUDGE EXECUTED - User: {user_id}, Type: {nudge['type']}, "
                        f"Channel: {nudge['channel']}, Template: {nudge['content_template']}")
             
-            # If it's a discount coupon, create it via QuickMart API
+            # If it's a discount coupon, assign it to the user via QuickMart API
             if nudge["type"] == "Discount Coupon":
                 try:
-                    coupon_created = await self._create_discount_coupon(user_id, nudge)
-                    if coupon_created:
-                        logger.info(f"Successfully created discount coupon for user {user_id}")
+                    coupon_assigned = await self._assign_discount_coupon(user_id, nudge)
+                    if coupon_assigned:
+                        logger.info(f"Successfully assigned discount coupon to user {user_id}")
                     else:
-                        logger.error(f"Failed to create discount coupon for user {user_id}")
+                        logger.error(f"Failed to assign discount coupon to user {user_id}")
                 except Exception as e:
-                    logger.error(f"Error creating discount coupon for user {user_id}: {e}")
+                    logger.error(f"Error assigning discount coupon to user {user_id}: {e}")
             
             executed_nudges.append(NudgeAction(
                 type=nudge["type"],
@@ -221,55 +221,46 @@ class NudgeEngine:
         
         return executed_nudges
     
-    async def _create_discount_coupon(self, user_id: str, nudge: Dict[str, Any]) -> bool:
-        """Create a discount coupon via QuickMart API"""
+    async def _assign_discount_coupon(self, user_id: str, nudge: Dict[str, Any]) -> bool:
+        """Assign a discount coupon to user via QuickMart API"""
         try:
             # Use single URL from environment variable
             quickmart_url = os.getenv("QUICKMART_API_URL", "http://localhost:3010")
             
-            # Generate unique coupon code
+            # Use the pre-loaded churn prevention coupon
+            coupon_id = "WELCOME_BACK20"
+            
+            # Generate unique nudge ID for tracking
             import uuid
-            from datetime import timedelta
-            coupon_code = f"CHURN_{user_id}_{uuid.uuid4().hex[:8].upper()}"
+            nudge_id = f"nudge_{uuid.uuid4().hex[:8]}"
             
-            # Fix date calculation
-            valid_until = datetime.utcnow() + timedelta(days=30)
-            
-            coupon_data = {
-                "code": coupon_code,
-                "name": nudge.get("content_template", "Churn Prevention Discount"),
-                "description": f"Personalized discount for {user_id} - Welcome back!",
-                "discount_type": "percentage",
-                "discount_value": nudge.get("discount_percent", 20),
-                "minimum_order_value": 50.0,
-                "usage_limit": 1,
-                "user_specific": True,
-                "applicable_user_ids": [user_id],
-                "valid_from": datetime.utcnow().isoformat(),
-                "valid_until": valid_until.isoformat(),
-                "is_active": True,
-                "created_by_system": "churn_prevention"
+            # Prepare assignment data
+            assignment_data = {
+                "user_id": user_id,
+                "coupon_id": coupon_id,
+                "nudge_id": nudge_id,
+                "churn_score": 0.8  # Default high churn score
             }
             
-            logger.info(f"Creating coupon {coupon_code} for user {user_id} via {quickmart_url}")
+            logger.info(f"Assigning coupon {coupon_id} to user {user_id} via {quickmart_url}")
             
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(
-                    f"{quickmart_url}/api/admin/coupons",
-                    json=coupon_data
+                    f"{quickmart_url}/api/coupons/internal/assign-nudge-coupon",
+                    params=assignment_data
                 )
                 
-                logger.info(f"Coupon creation response: {response.status_code} - {response.text}")
+                logger.info(f"Coupon assignment response: {response.status_code} - {response.text}")
                 
                 if response.status_code == 200:
-                    logger.info(f"Successfully created coupon {coupon_code} for user {user_id}")
+                    logger.info(f"Successfully assigned coupon {coupon_id} to user {user_id}")
                     return True
                 else:
-                    logger.error(f"Failed to create coupon: {response.status_code} - {response.text}")
+                    logger.error(f"Failed to assign coupon: {response.status_code} - {response.text}")
                     return False
                     
         except Exception as e:
-            logger.error(f"Exception creating coupon for user {user_id}: {e}")
+            logger.error(f"Exception assigning coupon to user {user_id}: {e}")
             import traceback
             logger.error(f"Traceback: {traceback.format_exc()}")
             return False

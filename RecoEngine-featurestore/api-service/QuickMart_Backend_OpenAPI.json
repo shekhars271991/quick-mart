@@ -1,0 +1,1995 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "QuickMart Backend API",
+    "description": "E-commerce backend with AI-powered churn prevention",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register User",
+        "description": "Register a new user",
+        "operationId": "register_user_api_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login User",
+        "description": "Login user and return JWT token",
+        "operationId": "login_user_api_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/profile": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Get User Profile",
+        "description": "Get current user profile",
+        "operationId": "get_user_profile_api_auth_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Update User Profile",
+        "description": "Update user profile",
+        "operationId": "update_user_profile_api_auth_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfile"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logout User",
+        "description": "Logout user (client should discard token)",
+        "operationId": "logout_user_api_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/products/": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get Products",
+        "description": "Get products with filtering and pagination",
+        "operationId": "get_products_api_products__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by category",
+              "title": "Category"
+            },
+            "description": "Filter by category"
+          },
+          {
+            "name": "subcategory",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by subcategory",
+              "title": "Subcategory"
+            },
+            "description": "Filter by subcategory"
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by brand",
+              "title": "Brand"
+            },
+            "description": "Filter by brand"
+          },
+          {
+            "name": "min_price",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Minimum price",
+              "title": "Min Price"
+            },
+            "description": "Minimum price"
+          },
+          {
+            "name": "max_price",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Maximum price",
+              "title": "Max Price"
+            },
+            "description": "Maximum price"
+          },
+          {
+            "name": "is_featured",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter featured products",
+              "title": "Is Featured"
+            },
+            "description": "Filter featured products"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search in name and description",
+              "title": "Search"
+            },
+            "description": "Search in name and description"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/{product_id}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get Product",
+        "description": "Get specific product by ID",
+        "operationId": "get_product_api_products__product_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/category/{category}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get Products By Category",
+        "description": "Get products by category",
+        "operationId": "get_products_by_category_api_products_category__category__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/search": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Search Products",
+        "description": "Search products",
+        "operationId": "search_products_api_products_search_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Search query",
+              "title": "Q"
+            },
+            "description": "Search query"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/featured": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get Featured Products",
+        "description": "Get featured products",
+        "operationId": "get_featured_products_api_products_featured_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/categories/": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get Categories",
+        "description": "Get all product categories",
+        "operationId": "get_categories_api_products_categories__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  },
+                  "type": "array",
+                  "title": "Response Get Categories Api Products Categories  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/coupons/available": {
+      "get": {
+        "tags": [
+          "Coupons"
+        ],
+        "summary": "Get Available Coupons",
+        "description": "Get all available coupons for general use",
+        "operationId": "get_available_coupons_api_coupons_available_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Coupon"
+                  },
+                  "type": "array",
+                  "title": "Response Get Available Coupons Api Coupons Available Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/coupons/user": {
+      "get": {
+        "tags": [
+          "Coupons"
+        ],
+        "summary": "Get User Coupons",
+        "description": "Get user-specific coupons (from nudges and assignments)",
+        "operationId": "get_user_coupons_api_coupons_user_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserCouponWithDetails"
+                  },
+                  "type": "array",
+                  "title": "Response Get User Coupons Api Coupons User Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/coupons/validate": {
+      "post": {
+        "tags": [
+          "Coupons"
+        ],
+        "summary": "Validate Coupon",
+        "description": "Validate a coupon code for the current user and order",
+        "operationId": "validate_coupon_api_coupons_validate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coupon_code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Coupon Code"
+            }
+          },
+          {
+            "name": "order_total",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "title": "Order Total"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponValidation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/coupons/apply": {
+      "post": {
+        "tags": [
+          "Coupons"
+        ],
+        "summary": "Apply Coupon",
+        "description": "Apply a coupon code (marks it as used)",
+        "operationId": "apply_coupon_api_coupons_apply_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coupon_code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Coupon Code"
+            }
+          },
+          {
+            "name": "order_total",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "title": "Order Total"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/coupons/history": {
+      "get": {
+        "tags": [
+          "Coupons"
+        ],
+        "summary": "Get Coupon History",
+        "description": "Get user's coupon usage history",
+        "operationId": "get_coupon_history_api_coupons_history_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/coupons/internal/assign-nudge-coupon": {
+      "post": {
+        "tags": [
+          "Coupons"
+        ],
+        "summary": "Assign Nudge Coupon",
+        "description": "Internal endpoint to assign a coupon from a nudge (called by RecoEngine integration)",
+        "operationId": "assign_nudge_coupon_api_coupons_internal_assign_nudge_coupon_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "coupon_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Coupon Id"
+            }
+          },
+          {
+            "name": "nudge_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Nudge Id"
+            }
+          },
+          {
+            "name": "churn_score",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "title": "Churn Score"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/preferences": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get User Preferences",
+        "description": "Get user preferences",
+        "operationId": "get_user_preferences_api_users_preferences_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferences"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update User Preferences",
+        "description": "Update user preferences",
+        "operationId": "update_user_preferences_api_users_preferences_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserPreferences"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferences"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/users/purchase-history": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get Purchase History",
+        "description": "Get user's purchase history",
+        "operationId": "get_purchase_history_api_users_purchase_history_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/load-data": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Load All Data",
+        "description": "Load all data (categories, products, users) from JSON files into Aerospike",
+        "operationId": "load_all_data_api_admin_load_data_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/load-categories": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Load Categories",
+        "description": "Load categories from categories.json into Aerospike",
+        "operationId": "load_categories_api_admin_load_categories_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/load-products": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Load Products",
+        "description": "Load products from products.json into Aerospike",
+        "operationId": "load_products_api_admin_load_products_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/products": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get Products",
+        "description": "Get all products from Aerospike",
+        "operationId": "get_products_api_admin_products_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/load-users": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Load Users",
+        "description": "Load users from users.json into Aerospike",
+        "operationId": "load_users_api_admin_load_users_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get Users",
+        "description": "Get all users from Aerospike (without passwords)",
+        "operationId": "get_users_api_admin_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/categories": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get Categories",
+        "description": "Get all categories from Aerospike",
+        "operationId": "get_categories_api_admin_categories_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/data-status": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get Data Status",
+        "description": "Check data initialization status",
+        "operationId": "get_data_status_api_admin_data_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/coupons": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Create Coupon",
+        "description": "Create a new coupon (used by RecoEngine for churn prevention)",
+        "operationId": "create_coupon_api_admin_coupons_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "Coupon Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Category": {
+        "properties": {
+          "category_id": {
+            "type": "string",
+            "title": "Category Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "parent_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Category"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_id",
+          "name"
+        ],
+        "title": "Category",
+        "description": "Product category model"
+      },
+      "Coupon": {
+        "properties": {
+          "coupon_id": {
+            "type": "string",
+            "title": "Coupon Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "discount_type": {
+            "$ref": "#/components/schemas/DiscountType"
+          },
+          "discount_value": {
+            "type": "number",
+            "title": "Discount Value"
+          },
+          "min_order_val": {
+            "type": "number",
+            "title": "Min Order Val",
+            "default": 0
+          },
+          "max_discount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Discount"
+          },
+          "usage_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Limit"
+          },
+          "usage_count": {
+            "type": "integer",
+            "title": "Usage Count",
+            "default": 0
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Valid Until"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "applicable_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Applicable Categories",
+            "default": []
+          },
+          "applicable_products": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Applicable Products",
+            "default": []
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coupon_id",
+          "code",
+          "name",
+          "description",
+          "discount_type",
+          "discount_value",
+          "valid_from",
+          "valid_until",
+          "created_at"
+        ],
+        "title": "Coupon",
+        "description": "Coupon model"
+      },
+      "CouponSource": {
+        "type": "string",
+        "enum": [
+          "nudge",
+          "general",
+          "promotion"
+        ],
+        "title": "CouponSource",
+        "description": "Coupon source enumeration"
+      },
+      "CouponValidation": {
+        "properties": {
+          "is_valid": {
+            "type": "boolean",
+            "title": "Is Valid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "discount_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discount Amount"
+          },
+          "final_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_valid",
+          "message"
+        ],
+        "title": "CouponValidation",
+        "description": "Coupon validation result"
+      },
+      "DiscountType": {
+        "type": "string",
+        "enum": [
+          "percentage",
+          "fixed",
+          "free_shipping"
+        ],
+        "title": "DiscountType",
+        "description": "Discount type enumeration"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Product": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "title": "Product Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subcategory"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price"
+          },
+          "original_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Price"
+          },
+          "discount_percentage": {
+            "type": "number",
+            "title": "Discount Percentage",
+            "default": 0
+          },
+          "brand": {
+            "type": "string",
+            "title": "Brand"
+          },
+          "images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Images",
+            "default": []
+          },
+          "specifications": {
+            "type": "object",
+            "title": "Specifications",
+            "default": {}
+          },
+          "stock_quantity": {
+            "type": "integer",
+            "title": "Stock Quantity",
+            "default": 0
+          },
+          "rating": {
+            "type": "number",
+            "title": "Rating",
+            "default": 0.0
+          },
+          "review_count": {
+            "type": "integer",
+            "title": "Review Count",
+            "default": 0
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          },
+          "is_featured": {
+            "type": "boolean",
+            "title": "Is Featured",
+            "default": false
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "name",
+          "description",
+          "category",
+          "price",
+          "brand",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Product",
+        "description": "Product model"
+      },
+      "ProductResponse": {
+        "properties": {
+          "products": {
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            },
+            "type": "array",
+            "title": "Products"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "has_next": {
+            "type": "boolean",
+            "title": "Has Next"
+          }
+        },
+        "type": "object",
+        "required": [
+          "products",
+          "total",
+          "page",
+          "limit",
+          "has_next"
+        ],
+        "title": "ProductResponse",
+        "description": "Product list response model"
+      },
+      "UserCoupon": {
+        "properties": {
+          "user_coupon_id": {
+            "type": "string",
+            "title": "User Coupon Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "coupon_id": {
+            "type": "string",
+            "title": "Coupon Id"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CouponSource"
+          },
+          "nudge_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nudge Id"
+          },
+          "churn_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Churn Score"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserCouponStatus"
+              }
+            ],
+            "default": "available"
+          },
+          "assigned_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Assigned At"
+          },
+          "used_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used At"
+          },
+          "order_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_coupon_id",
+          "user_id",
+          "coupon_id",
+          "source",
+          "assigned_at"
+        ],
+        "title": "UserCoupon",
+        "description": "User-specific coupon model"
+      },
+      "UserCouponStatus": {
+        "type": "string",
+        "enum": [
+          "available",
+          "used",
+          "expired"
+        ],
+        "title": "UserCouponStatus",
+        "description": "User coupon status enumeration"
+      },
+      "UserCouponWithDetails": {
+        "properties": {
+          "user_coupon": {
+            "$ref": "#/components/schemas/UserCoupon"
+          },
+          "coupon": {
+            "$ref": "#/components/schemas/Coupon"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_coupon",
+          "coupon"
+        ],
+        "title": "UserCouponWithDetails",
+        "description": "User coupon with full coupon details"
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/UserProfile"
+          },
+          "preferences": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPreferences"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "profile"
+        ],
+        "title": "UserCreate",
+        "description": "User creation model"
+      },
+      "UserLogin": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserLogin",
+        "description": "User login model"
+      },
+      "UserPreferences": {
+        "properties": {
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Categories",
+            "default": []
+          },
+          "brands": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Brands",
+            "default": []
+          },
+          "price_range": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Price Range",
+            "default": {
+              "min": 0,
+              "max": 1000
+            }
+          }
+        },
+        "type": "object",
+        "title": "UserPreferences",
+        "description": "User preferences"
+      },
+      "UserProfile": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "loyalty_tier": {
+            "type": "string",
+            "title": "Loyalty Tier",
+            "default": "bronze"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "UserProfile",
+        "description": "User profile information"
+      },
+      "UserResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/UserProfile"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/UserPreferences"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_login": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "profile",
+          "preferences",
+          "created_at"
+        ],
+        "title": "UserResponse",
+        "description": "User response model (without sensitive data)"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

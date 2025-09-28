@@ -1,0 +1,1283 @@
+{
+    "info": {
+        "_postman_id": "quickmart-complete-apis-fixed",
+        "name": "QuickMart Complete API Collection (Fixed)",
+        "description": "Comprehensive and accurate API collection for the complete QuickMart platform",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "quickmart-platform"
+    },
+    "item": [
+        {
+            "name": "🛒 QuickMart Backend APIs",
+            "description": "E-commerce backend APIs for authentication, products, coupons, and admin operations",
+            "item": [
+                {
+                    "name": "🔐 Authentication",
+                    "item": [
+                        {
+                            "name": "Register User",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"securepassword123\",\n  \"name\": \"New User\",\n  \"age\": 25,\n  \"location\": \"New York\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/auth/register",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "auth",
+                                        "register"
+                                    ]
+                                },
+                                "description": "Register a new user account"
+                            }
+                        },
+                        {
+                            "name": "Login User",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"email\": \"demo@quickmart.com\",\n  \"password\": \"admin\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/auth/login",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "auth",
+                                        "login"
+                                    ]
+                                },
+                                "description": "Login user and return JWT token (triggers churn prediction)"
+                            }
+                        },
+                        {
+                            "name": "Get User Profile",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/auth/profile",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "auth",
+                                        "profile"
+                                    ]
+                                },
+                                "description": "Get current user profile"
+                            }
+                        },
+                        {
+                            "name": "Update User Profile",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"name\": \"Updated Name\",\n  \"age\": 30,\n  \"location\": \"Updated Location\",\n  \"loyalty_tier\": \"gold\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/auth/profile",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "auth",
+                                        "profile"
+                                    ]
+                                },
+                                "description": "Update user profile information"
+                            }
+                        },
+                        {
+                            "name": "Logout User",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/auth/logout",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "auth",
+                                        "logout"
+                                    ]
+                                },
+                                "description": "Logout user (client should discard token)"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "🛍️ Products",
+                    "item": [
+                        {
+                            "name": "Get All Products",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/products?page=1&limit=20&category=electronics&min_price=50&max_price=500&is_featured=true&search=laptop",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "products"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "Page number"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "20",
+                                            "description": "Items per page"
+                                        },
+                                        {
+                                            "key": "category",
+                                            "value": "electronics",
+                                            "description": "Filter by category"
+                                        },
+                                        {
+                                            "key": "subcategory",
+                                            "value": "",
+                                            "description": "Filter by subcategory",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "brand",
+                                            "value": "",
+                                            "description": "Filter by brand",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "min_price",
+                                            "value": "50",
+                                            "description": "Minimum price"
+                                        },
+                                        {
+                                            "key": "max_price",
+                                            "value": "500",
+                                            "description": "Maximum price"
+                                        },
+                                        {
+                                            "key": "is_featured",
+                                            "value": "true",
+                                            "description": "Filter featured products"
+                                        },
+                                        {
+                                            "key": "search",
+                                            "value": "laptop",
+                                            "description": "Search in name and description"
+                                        }
+                                    ]
+                                },
+                                "description": "Get products with filtering and pagination"
+                            }
+                        },
+                        {
+                            "name": "Get Product by ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/products/{{product_id}}",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "products",
+                                        "{{product_id}}"
+                                    ]
+                                },
+                                "description": "Get specific product by ID"
+                            }
+                        },
+                        {
+                            "name": "Get Products by Category",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/products/category/electronics?page=1&limit=10",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "products",
+                                        "category",
+                                        "electronics"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "Get products by category"
+                            }
+                        },
+                        {
+                            "name": "Search Products",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/products/search?q=laptop&page=1&limit=10",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "products",
+                                        "search"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "q",
+                                            "value": "laptop",
+                                            "description": "Search query"
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "Search products by query"
+                            }
+                        },
+                        {
+                            "name": "Get Featured Products",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/products/featured?page=1&limit=10",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "products",
+                                        "featured"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "Get featured products"
+                            }
+                        },
+                        {
+                            "name": "Get Categories",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/products/categories",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "products",
+                                        "categories"
+                                    ]
+                                },
+                                "description": "Get all product categories"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "🎫 Coupons",
+                    "item": [
+                        {
+                            "name": "Get Available Coupons",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/coupons/available",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "coupons",
+                                        "available"
+                                    ]
+                                },
+                                "description": "Get all available coupons for general use"
+                            }
+                        },
+                        {
+                            "name": "Get User Coupons",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/coupons/user",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "coupons",
+                                        "user"
+                                    ]
+                                },
+                                "description": "Get user-specific coupons (from nudges and assignments)"
+                            }
+                        },
+                        {
+                            "name": "Validate Coupon",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"coupon_code\": \"WELCOME10\",\n  \"order_value\": 100.0,\n  \"product_categories\": [\"electronics\"]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/coupons/validate",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "coupons",
+                                        "validate"
+                                    ]
+                                },
+                                "description": "Validate a coupon for an order"
+                            }
+                        },
+                        {
+                            "name": "Apply Coupon",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"coupon_code\": \"WELCOME10\",\n  \"order_value\": 100.0,\n  \"product_categories\": [\"electronics\"]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/coupons/apply",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "coupons",
+                                        "apply"
+                                    ]
+                                },
+                                "description": "Apply a coupon to an order"
+                            }
+                        },
+                        {
+                            "name": "Get Coupon History",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/coupons/history",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "coupons",
+                                        "history"
+                                    ]
+                                },
+                                "description": "Get user's coupon usage history"
+                            }
+                        },
+                        {
+                            "name": "Assign Nudge Coupon (Internal)",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/coupons/internal/assign-nudge-coupon?user_id={{test_user_id}}&coupon_id=WELCOME_BACK20&nudge_id=nudge_12345&churn_score=0.8",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "coupons",
+                                        "internal",
+                                        "assign-nudge-coupon"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "user_id",
+                                            "value": "{{test_user_id}}"
+                                        },
+                                        {
+                                            "key": "coupon_id",
+                                            "value": "WELCOME_BACK20"
+                                        },
+                                        {
+                                            "key": "nudge_id",
+                                            "value": "nudge_12345"
+                                        },
+                                        {
+                                            "key": "churn_score",
+                                            "value": "0.8"
+                                        }
+                                    ]
+                                },
+                                "description": "Internal endpoint to assign a coupon from a nudge (called by RecoEngine)"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "👤 Users",
+                    "item": [
+                        {
+                            "name": "Get User Preferences",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/users/preferences",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "users",
+                                        "preferences"
+                                    ]
+                                },
+                                "description": "Get user preferences"
+                            }
+                        },
+                        {
+                            "name": "Update User Preferences",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"categories\": [\"electronics\", \"books\"],\n  \"brands\": [\"Apple\", \"Samsung\"],\n  \"price_range\": {\n    \"min\": 50,\n    \"max\": 1000\n  }\n}"
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/users/preferences",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "users",
+                                        "preferences"
+                                    ]
+                                },
+                                "description": "Update user preferences"
+                            }
+                        },
+                        {
+                            "name": "Get Purchase History",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/users/purchase-history",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "users",
+                                        "purchase-history"
+                                    ]
+                                },
+                                "description": "Get user's purchase history"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "⚙️ Admin",
+                    "item": [
+                        {
+                            "name": "Load All Data",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/load-data",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "load-data"
+                                    ]
+                                },
+                                "description": "Load all data (categories, products, users, coupons) from JSON files"
+                            }
+                        },
+                        {
+                            "name": "Load Categories",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/load-categories",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "load-categories"
+                                    ]
+                                },
+                                "description": "Load categories from categories.json"
+                            }
+                        },
+                        {
+                            "name": "Load Products",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/load-products",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "load-products"
+                                    ]
+                                },
+                                "description": "Load products from products.json"
+                            }
+                        },
+                        {
+                            "name": "Load Users",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/load-users",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "load-users"
+                                    ]
+                                },
+                                "description": "Load users from users.json"
+                            }
+                        },
+                        {
+                            "name": "Get All Products (Admin)",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/products",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "products"
+                                    ]
+                                },
+                                "description": "Get all products from database (admin view)"
+                            }
+                        },
+                        {
+                            "name": "Get All Users (Admin)",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/users",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "users"
+                                    ]
+                                },
+                                "description": "Get all users from database (admin view, no passwords)"
+                            }
+                        },
+                        {
+                            "name": "Get All Categories (Admin)",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/categories",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "categories"
+                                    ]
+                                },
+                                "description": "Get all categories from database"
+                            }
+                        },
+                        {
+                            "name": "Get Data Status",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/data-status",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "data-status"
+                                    ]
+                                },
+                                "description": "Check data initialization status"
+                            }
+                        },
+                        {
+                            "name": "Create Coupon (Admin)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"code\": \"ADMIN_TEST20\",\n  \"name\": \"Admin Test Discount\",\n  \"description\": \"Test discount created via admin API\",\n  \"discount_type\": \"percentage\",\n  \"discount_value\": 20,\n  \"minimum_order_value\": 50.0,\n  \"usage_limit\": 100,\n  \"user_specific\": false,\n  \"applicable_user_ids\": [],\n  \"valid_from\": \"2025-01-01T00:00:00\",\n  \"valid_until\": \"2025-12-31T23:59:59\",\n  \"is_active\": true,\n  \"created_by_system\": \"admin\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/coupons",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "coupons"
+                                    ]
+                                },
+                                "description": "Create a new coupon (used by RecoEngine for churn prevention)"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "🤖 RecoEngine APIs",
+            "description": "Churn prediction, feature ingestion, and nudge engine APIs",
+            "item": [
+                {
+                    "name": "🏥 Health & Status",
+                    "item": [
+                        {
+                            "name": "Root Endpoint",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        ""
+                                    ]
+                                },
+                                "description": "Get RecoEngine API information"
+                            }
+                        },
+                        {
+                            "name": "Health Check",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/health",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "health"
+                                    ]
+                                },
+                                "description": "Check RecoEngine health and model status"
+                            }
+                        },
+                        {
+                            "name": "Monitoring Metrics",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/monitoring",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "monitoring"
+                                    ]
+                                },
+                                "description": "Get monitoring metrics for API performance and model accuracy"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "📊 Feature Ingestion",
+                    "item": [
+                        {
+                            "name": "Ingest Profile Features",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"{{test_user_id}}\",\n  \"acc_age_days\": 365,\n  \"member_dur\": 12,\n  \"loyalty_enc\": 2,\n  \"geo_loc_enc\": 1,\n  \"device_type_enc\": 1,\n  \"pref_pay_enc\": 2,\n  \"lang_pref_enc\": 1\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/ingest/profile",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "ingest",
+                                        "profile"
+                                    ]
+                                },
+                                "description": "Ingest user profile features"
+                            }
+                        },
+                        {
+                            "name": "Ingest Behavior Features",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"{{test_user_id}}\",\n  \"days_last_login\": 2,\n  \"days_last_purch\": 7,\n  \"sess_7d\": 5,\n  \"sess_30d\": 20,\n  \"avg_sess_dur\": 15.5,\n  \"ctr_10_sess\": 0.75,\n  \"cart_abandon\": 0.2,\n  \"wishlist_ratio\": 0.3,\n  \"content_engage\": 0.8\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/ingest/behavior",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "ingest",
+                                        "behavior"
+                                    ]
+                                },
+                                "description": "Ingest user behavior features"
+                            }
+                        },
+                        {
+                            "name": "Ingest Transactional Features",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"{{test_user_id}}\",\n  \"avg_order_val\": 125.50,\n  \"orders_6m\": 8,\n  \"purch_freq_90d\": 3,\n  \"last_hv_purch\": 30,\n  \"refund_rate\": 0.05,\n  \"sub_pay_status\": 1,\n  \"discount_dep\": 0.4\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/ingest/transactional",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "ingest",
+                                        "transactional"
+                                    ]
+                                },
+                                "description": "Ingest transactional features"
+                            }
+                        },
+                        {
+                            "name": "Ingest Engagement Features",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"{{test_user_id}}\",\n  \"push_open_rate\": 0.6,\n  \"email_ctr\": 0.45,\n  \"inapp_ctr\": 0.7,\n  \"promo_resp_time\": 8,\n  \"retention_resp\": 1\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/ingest/engagement",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "ingest",
+                                        "engagement"
+                                    ]
+                                },
+                                "description": "Ingest engagement features"
+                            }
+                        },
+                        {
+                            "name": "Ingest Support Features",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"{{test_user_id}}\",\n  \"tickets_90d\": 1,\n  \"avg_ticket_res\": 24,\n  \"csat_score\": 4,\n  \"refund_req\": 0\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/ingest/support",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "ingest",
+                                        "support"
+                                    ]
+                                },
+                                "description": "Ingest support features"
+                            }
+                        },
+                        {
+                            "name": "Ingest Realtime Features",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"{{test_user_id}}\",\n  \"curr_sess_clk\": 12,\n  \"checkout_time\": 180,\n  \"cart_no_buy\": 1,\n  \"bounce_flag\": 0\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/ingest/realtime",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "ingest",
+                                        "realtime"
+                                    ]
+                                },
+                                "description": "Ingest real-time session features"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "🔮 Churn Prediction",
+                    "item": [
+                        {
+                            "name": "Predict Churn",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/predict/{{test_user_id}}",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "predict",
+                                        "{{test_user_id}}"
+                                    ]
+                                },
+                                "description": "Predict churn probability for a user (triggers nudges if high risk)"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "🎯 Nudge Engine",
+                    "item": [
+                        {
+                            "name": "Get All Nudge Rules",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/nudge/rules",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "nudge",
+                                        "rules"
+                                    ]
+                                },
+                                "description": "Get all available nudge rules"
+                            }
+                        },
+                        {
+                            "name": "Get Specific Nudge Rule",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/nudge/rules/high_risk_inactive_user",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "nudge",
+                                        "rules",
+                                        "high_risk_inactive_user"
+                                    ]
+                                },
+                                "description": "Get a specific nudge rule by ID"
+                            }
+                        },
+                        {
+                            "name": "Test Nudge Rules",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/nudge/test/{{test_user_id}}?churn_probability=0.8&churn_reasons=Inactive for 15 days&churn_reasons=No purchase for 60 days",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "nudge",
+                                        "test",
+                                        "{{test_user_id}}"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "churn_probability",
+                                            "value": "0.8"
+                                        },
+                                        {
+                                            "key": "churn_reasons",
+                                            "value": "Inactive for 15 days"
+                                        },
+                                        {
+                                            "key": "churn_reasons",
+                                            "value": "No purchase for 60 days"
+                                        }
+                                    ]
+                                },
+                                "description": "Test which nudge rules would match for given parameters"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "🎓 Model Training",
+                    "item": [
+                        {
+                            "name": "Generate Training Data",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/generate-data?samples=1000&clear_existing=false&random_seed=42",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "generate-data"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "samples",
+                                            "value": "1000",
+                                            "description": "Number of training samples to generate (100-10000)"
+                                        },
+                                        {
+                                            "key": "clear_existing",
+                                            "value": "false",
+                                            "description": "Clear existing training data before generating new"
+                                        },
+                                        {
+                                            "key": "random_seed",
+                                            "value": "42",
+                                            "description": "Random seed for reproducibility"
+                                        }
+                                    ]
+                                },
+                                "description": "Generate synthetic training data"
+                            }
+                        },
+                        {
+                            "name": "Start Training",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/start?test_size=0.2&random_state=42",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "start"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "test_size",
+                                            "value": "0.2",
+                                            "description": "Test set size (0.1-0.5)"
+                                        },
+                                        {
+                                            "key": "random_state",
+                                            "value": "42",
+                                            "description": "Random seed for reproducibility"
+                                        }
+                                    ]
+                                },
+                                "description": "Start model training job"
+                            }
+                        },
+                        {
+                            "name": "Get Training Status",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/status",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "status"
+                                    ]
+                                },
+                                "description": "Get current training status and model information"
+                            }
+                        },
+                        {
+                            "name": "Get Training Metrics",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/metrics",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "metrics"
+                                    ]
+                                },
+                                "description": "Get detailed training metrics from the last training job"
+                            }
+                        },
+                        {
+                            "name": "Check Data Quality",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/data-quality",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "data-quality"
+                                    ]
+                                },
+                                "description": "Check the quality of training data in Aerospike"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "backend_url",
+            "value": "http://localhost:3010",
+            "description": "QuickMart Backend API base URL"
+        },
+        {
+            "key": "reco_url",
+            "value": "http://localhost:8000",
+            "description": "RecoEngine API base URL"
+        },
+        {
+            "key": "access_token",
+            "value": "",
+            "description": "JWT access token from login"
+        },
+        {
+            "key": "test_user_id",
+            "value": "user_005",
+            "description": "Test user ID for predictions"
+        },
+        {
+            "key": "product_id",
+            "value": "prod_001",
+            "description": "Test product ID"
+        }
+    ]
+}
