@@ -243,6 +243,131 @@ show_logs() {
     esac
 }
 
+# Function to run services locally for development
+run_local() {
+    print_header "${ROCKET} Running Services Locally for Development"
+    
+    # Check if Python virtual environments exist, create if not
+    setup_local_env
+    
+    # Start infrastructure (Aerospike) in Docker
+    print_status "${GEAR} Starting infrastructure services..." $YELLOW
+    start_infrastructure
+    
+    # Run backend services locally
+    print_status "${GEAR} Starting backend services locally..." $YELLOW
+    
+    # Start QuickMart Backend locally
+    start_quickmart_local &
+    QUICKMART_PID=$!
+    
+    # Start RecoEngine locally  
+    start_recoengine_local &
+    RECO_PID=$!
+    
+    # Wait a bit for services to start
+    sleep 5
+    
+    print_status "${CHECK} Services starting locally!" $GREEN
+    print_status "QuickMart Backend: http://localhost:3011 (PID: $QUICKMART_PID)" $CYAN
+    print_status "RecoEngine API: http://localhost:8001 (PID: $RECO_PID)" $CYAN
+    print_status "Aerospike: localhost:3000 (Docker)" $CYAN
+    print_status "" $NC
+    print_status "Press Ctrl+C to stop all services" $YELLOW
+    
+    # Wait for interrupt
+    trap 'kill $QUICKMART_PID $RECO_PID 2>/dev/null; exit' INT
+    wait
+}
+
+# Function to setup local development environment
+setup_local_env() {
+    print_status "${GEAR} Setting up local development environment..." $YELLOW
+    
+    # Setup QuickMart Backend
+    if [ ! -d "QuickMart-backend/venv" ]; then
+        print_status "Creating Python virtual environment for QuickMart Backend..." $YELLOW
+        cd QuickMart-backend
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+        cd ..
+    fi
+    
+    # Setup RecoEngine
+    if [ ! -d "RecoEngine-featurestore/api-service/venv" ]; then
+        print_status "Creating Python virtual environment for RecoEngine..." $YELLOW
+        cd RecoEngine-featurestore/api-service
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+        cd ../..
+    fi
+    
+    print_status "${CHECK} Local development environment ready!" $GREEN
+}
+
+# Function to start QuickMart Backend locally
+start_quickmart_local() {
+    print_status "${CART} Starting QuickMart Backend locally on port 3011..." $YELLOW
+    cd QuickMart-backend
+    source venv/bin/activate
+    
+    export AEROSPIKE_HOST=localhost
+    export AEROSPIKE_PORT=3000
+    export AEROSPIKE_NAMESPACE=quick_mart
+    export RECO_ENGINE_URL=http://localhost:8001
+    export JWT_SECRET=quickmart-jwt-secret-change-in-production
+    export DEBUG=true
+    
+    python -m uvicorn app.main:app --host 0.0.0.0 --port 3011 --reload
+}
+
+# Function to start RecoEngine locally
+start_recoengine_local() {
+    print_status "${BRAIN} Starting RecoEngine locally on port 8001..." $YELLOW
+    cd RecoEngine-featurestore/api-service
+    source venv/bin/activate
+    
+    export AEROSPIKE_HOST=localhost
+    export AEROSPIKE_PORT=3000
+    export AEROSPIKE_NAMESPACE=churn_features
+    
+    python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+}
+
+# Function to stop local services
+stop_local() {
+    print_header "${CROSS} Stopping Local Services"
+    
+    print_status "${GEAR} Stopping local backend services..." $YELLOW
+    
+    # Kill processes by port
+    lsof -ti:3011 | xargs kill -9 2>/dev/null || true
+    lsof -ti:8001 | xargs kill -9 2>/dev/null || true
+    
+    print_status "${CHECK} Local services stopped!" $GREEN
+}
+
+# Function to show local service status
+status_local() {
+    print_header "${GEAR} Local Development Services Status"
+    
+    print_status "${CYAN}Local Services:${NC}" $NC
+    check_service "QuickMart Backend (Local)" 3011
+    check_service "RecoEngine (Local)" 8001
+    
+    print_status "${CYAN}Infrastructure (Docker):${NC}" $NC
+    check_service "Aerospike" 3000
+    
+    print_status "" $NC
+    print_status "${CYAN}Quick Access URLs (Local):${NC}" $NC
+    print_status "${BLUE}QuickMart Backend API:${NC} http://localhost:3011/docs" $NC
+    print_status "${BLUE}RecoEngine API:${NC} http://localhost:8001/docs" $NC
+    print_status "${BLUE}QuickMart Health:${NC} http://localhost:3011/health" $NC
+    print_status "${BLUE}RecoEngine Health:${NC} http://localhost:8001/health" $NC
+}
+
 # Function to rebuild all services
 rebuild_all() {
     print_header "${GEAR} Rebuilding All Services"
@@ -313,6 +438,11 @@ show_help() {
     echo -e "  ${GREEN}test${NC}            Run health checks for all services"
     echo -e "  ${GREEN}logs [service]${NC}  Show logs (service: aerospike, reco, quickmart, or all)"
     echo ""
+    echo -e "${YELLOW}Local Development (Fast):${NC}"
+    echo -e "  ${GREEN}local${NC}           Run backend services locally (QuickMart:3011, RecoEngine:8001)"
+    echo -e "  ${GREEN}local-status${NC}    Show status of local development services"
+    echo -e "  ${GREEN}local-stop${NC}      Stop local development services"
+    echo ""
     echo -e "${YELLOW}Individual Services:${NC}"
     echo -e "  ${GREEN}infra${NC}           Start only shared infrastructure (Aerospike)"
     echo -e "  ${GREEN}reco${NC}            Start only RecoEngine service"
@@ -321,8 +451,10 @@ show_help() {
     echo -e "${YELLOW}Examples:${NC}"
     echo -e "  ${BLUE}./run.sh fresh${NC}        # Rebuild and start all services (recommended)"
     echo -e "  ${BLUE}./run.sh start${NC}        # Start all services"
+    echo -e "  ${BLUE}./run.sh local${NC}        # Run locally for fast development"
     echo -e "  ${BLUE}./run.sh rebuild${NC}      # Rebuild all containers"
     echo -e "  ${BLUE}./run.sh status${NC}       # Check service health"
+    echo -e "  ${BLUE}./run.sh local-status${NC} # Check local development services"
     echo -e "  ${BLUE}./run.sh train${NC}        # Train ML model"
     echo -e "  ${BLUE}./run.sh logs reco${NC}    # Show RecoEngine logs"
     echo -e "  ${BLUE}./run.sh restart${NC}      # Restart everything"
@@ -353,6 +485,15 @@ case "${1:-help}" in
         ;;
     "restart-backend"|"backend-restart")
         restart_backend
+        ;;
+    "local"|"dev"|"local-dev")
+        run_local
+        ;;
+    "local-status"|"dev-status")
+        status_local
+        ;;
+    "local-stop"|"dev-stop")
+        stop_local
         ;;
     "status"|"ps")
         show_status

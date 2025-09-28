@@ -1,0 +1,756 @@
+{
+    "info": {
+        "_postman_id": "quickmart-complete-apis",
+        "name": "QuickMart Complete API Collection",
+        "description": "Comprehensive API collection for the complete QuickMart platform including Backend APIs, RecoEngine, and Churn Prediction services",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "quickmart-platform"
+    },
+    "item": [
+        {
+            "name": "QuickMart Backend (Port 3010)",
+            "description": "E-commerce backend APIs for authentication, products, coupons, and admin operations",
+            "item": [
+                {
+                    "name": "Health & Status",
+                    "item": [
+                        {
+                            "name": "Health Check",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/health",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "health"
+                                    ]
+                                },
+                                "description": "Check QuickMart Backend API health and database connectivity"
+                            }
+                        },
+                        {
+                            "name": "Root Endpoint",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        ""
+                                    ]
+                                },
+                                "description": "Get API information and available endpoints"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Authentication",
+                    "item": [
+                        {
+                            "name": "User Registration",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"testpassword123\",\n  \"name\": \"Test User\",\n  \"age\": 25,\n  \"location\": \"Test City\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/auth/register",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "auth",
+                                        "register"
+                                    ]
+                                },
+                                "description": "Register a new user account"
+                            }
+                        },
+                        {
+                            "name": "User Login",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/x-www-form-urlencoded"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "urlencoded",
+                                    "urlencoded": [
+                                        {
+                                            "key": "username",
+                                            "value": "test@example.com",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "password",
+                                            "value": "testpassword123",
+                                            "type": "text"
+                                        }
+                                    ]
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/auth/login",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "auth",
+                                        "login"
+                                    ]
+                                },
+                                "description": "Login with email and password to get JWT token"
+                            }
+                        },
+                        {
+                            "name": "Get Current User",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{jwt_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/auth/me",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "auth",
+                                        "me"
+                                    ]
+                                },
+                                "description": "Get current authenticated user information"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Products",
+                    "item": [
+                        {
+                            "name": "Get All Products",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/products",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "products"
+                                    ]
+                                },
+                                "description": "Get all available products"
+                            }
+                        },
+                        {
+                            "name": "Get Product by ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/products/prod_001",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "products",
+                                        "prod_001"
+                                    ]
+                                },
+                                "description": "Get specific product by ID"
+                            }
+                        },
+                        {
+                            "name": "Get Products by Category",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/products/category/electronics",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "products",
+                                        "category",
+                                        "electronics"
+                                    ]
+                                },
+                                "description": "Get products filtered by category"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Coupons",
+                    "item": [
+                        {
+                            "name": "Get Available Coupons",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{jwt_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/coupons",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "coupons"
+                                    ]
+                                },
+                                "description": "Get all available coupons for the user"
+                            }
+                        },
+                        {
+                            "name": "Validate Coupon",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{jwt_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"coupon_code\": \"WELCOME10\",\n  \"order_total\": 100.00\n}"
+                                },
+                                "url": {
+                                    "raw": "{{backend_url}}/api/coupons/validate",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "coupons",
+                                        "validate"
+                                    ]
+                                },
+                                "description": "Validate a coupon code and get discount details"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Admin Operations",
+                    "item": [
+                        {
+                            "name": "Load All Data",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/load-data",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "load-data"
+                                    ]
+                                },
+                                "description": "Load all demo data (categories, products, users) into the system"
+                            }
+                        },
+                        {
+                            "name": "Load Users Only",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{backend_url}}/api/admin/load-users",
+                                    "host": [
+                                        "{{backend_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "load-users"
+                                    ]
+                                },
+                                "description": "Load only user data with features for RecoEngine"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "RecoEngine & Churn Prediction (Port 8000)",
+            "description": "Machine learning APIs for churn prediction, feature management, and model training",
+            "item": [
+                {
+                    "name": "Health & Status",
+                    "item": [
+                        {
+                            "name": "Health Check",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/health",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "health"
+                                    ]
+                                },
+                                "description": "Check RecoEngine API health and model status"
+                            }
+                        },
+                        {
+                            "name": "Root Endpoint",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        ""
+                                    ]
+                                },
+                                "description": "Get RecoEngine API information"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Feature Management",
+                    "item": [
+                        {
+                            "name": "Ingest Profile Features",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"user_12345\",\n  \"acc_age_days\": 365,\n  \"member_dur\": 12,\n  \"loyalty_enc\": 2,\n  \"geo_loc_enc\": 1,\n  \"device_type_enc\": 1,\n  \"pref_pay_enc\": 1,\n  \"lang_pref_enc\": 1\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/ingest/profile",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "ingest",
+                                        "profile"
+                                    ]
+                                },
+                                "description": "Ingest user profile features"
+                            }
+                        },
+                        {
+                            "name": "Ingest Behavior Features",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"user_12345\",\n  \"days_last_login\": 2,\n  \"days_last_purch\": 5,\n  \"sess_7d\": 8,\n  \"sess_30d\": 25,\n  \"avg_sess_dur\": 15.5,\n  \"ctr_10_sess\": 0.25,\n  \"cart_abandon\": 0.15,\n  \"wishlist_ratio\": 0.3,\n  \"content_engage\": 0.7\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/ingest/behavior",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "ingest",
+                                        "behavior"
+                                    ]
+                                },
+                                "description": "Ingest user behavior features"
+                            }
+                        },
+                        {
+                            "name": "Get All Features",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/features/user_12345",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "features",
+                                        "user_12345"
+                                    ]
+                                },
+                                "description": "Retrieve all features for a specific user"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Churn Prediction",
+                    "item": [
+                        {
+                            "name": "Predict Churn",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"user_12345\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/predict/churn",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "predict",
+                                        "churn"
+                                    ]
+                                },
+                                "description": "Predict churn probability for a user"
+                            }
+                        },
+                        {
+                            "name": "Batch Predict Churn",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_ids\": [\"user_12345\", \"user_67890\", \"user_11111\"]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/predict/churn/batch",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "predict",
+                                        "churn",
+                                        "batch"
+                                    ]
+                                },
+                                "description": "Predict churn probability for multiple users"
+                            }
+                        },
+                        {
+                            "name": "Get Churn Insights",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/insights/churn/user_12345",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "insights",
+                                        "churn",
+                                        "user_12345"
+                                    ]
+                                },
+                                "description": "Get detailed churn insights and explanations for a user"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Nudge Engine",
+                    "item": [
+                        {
+                            "name": "Get Nudges",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"user_id\": \"user_12345\",\n  \"churn_probability\": 0.75,\n  \"churn_reasons\": [\"low_engagement\", \"high_cart_abandonment\"]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{reco_url}}/nudges",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "nudges"
+                                    ]
+                                },
+                                "description": "Get personalized nudges based on churn prediction"
+                            }
+                        },
+                        {
+                            "name": "Test Nudge Rules",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/nudges/test?user_id=user_12345&churn_probability=0.8&churn_reasons=low_engagement&churn_reasons=price_sensitivity",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "nudges",
+                                        "test"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "user_id",
+                                            "value": "user_12345"
+                                        },
+                                        {
+                                            "key": "churn_probability",
+                                            "value": "0.8"
+                                        },
+                                        {
+                                            "key": "churn_reasons",
+                                            "value": "low_engagement"
+                                        },
+                                        {
+                                            "key": "churn_reasons",
+                                            "value": "price_sensitivity"
+                                        }
+                                    ]
+                                },
+                                "description": "Test which nudge rules would match for given parameters"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Model Training",
+                    "item": [
+                        {
+                            "name": "Generate Training Data",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/generate-data?samples=1000&clear_existing=false&random_seed=42",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "generate-data"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "samples",
+                                            "value": "1000",
+                                            "description": "Number of training samples to generate (100-10000)"
+                                        },
+                                        {
+                                            "key": "clear_existing",
+                                            "value": "false",
+                                            "description": "Clear existing training data before generating new"
+                                        },
+                                        {
+                                            "key": "random_seed",
+                                            "value": "42",
+                                            "description": "Random seed for reproducibility"
+                                        }
+                                    ]
+                                },
+                                "description": "Generate synthetic training data for model training"
+                            }
+                        },
+                        {
+                            "name": "Start Training Job",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/start?test_size=0.2&random_state=42",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "start"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "test_size",
+                                            "value": "0.2",
+                                            "description": "Test set size (0.1-0.5)"
+                                        },
+                                        {
+                                            "key": "random_state",
+                                            "value": "42",
+                                            "description": "Random seed for reproducibility"
+                                        }
+                                    ]
+                                },
+                                "description": "Start model training job using data from Aerospike"
+                            }
+                        },
+                        {
+                            "name": "Get Training Status",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/status",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "status"
+                                    ]
+                                },
+                                "description": "Get current training status and model information"
+                            }
+                        },
+                        {
+                            "name": "Get Training Metrics",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/metrics",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "metrics"
+                                    ]
+                                },
+                                "description": "Get detailed training metrics from the last training job"
+                            }
+                        },
+                        {
+                            "name": "Check Data Quality",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/train/data-quality",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "train",
+                                        "data-quality"
+                                    ]
+                                },
+                                "description": "Check the quality of training data in Aerospike"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "backend_url",
+            "value": "http://localhost:3010",
+            "description": "QuickMart Backend API base URL"
+        },
+        {
+            "key": "reco_url",
+            "value": "http://localhost:8000",
+            "description": "RecoEngine API base URL"
+        },
+        {
+            "key": "jwt_token",
+            "value": "",
+            "description": "JWT token for authenticated requests (set after login)"
+        }
+    ]
+}

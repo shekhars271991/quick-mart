@@ -382,6 +382,92 @@ async def test_nudge_rules(
     return nudge_engine.test_rules(user_id, churn_probability, churn_reasons)
 
 # Training endpoints
+@app.post("/train/generate-data")
+async def generate_training_data(
+    samples: int = Query(1000, ge=100, le=10000, description="Number of training samples to generate"),
+    clear_existing: bool = Query(False, description="Clear existing training data before generating new"),
+    random_seed: int = Query(42, description="Random seed for reproducibility")
+):
+    """Generate synthetic training data using the training data generation script"""
+    try:
+        logger.info(f"Generating {samples} training samples...")
+        
+        # Import the training data generator
+        import sys
+        import os
+        training_service_path = os.path.join(os.path.dirname(__file__), '..', 'training-service')
+        if training_service_path not in sys.path:
+            sys.path.append(training_service_path)
+        
+        try:
+            from generate_training_data import TrainingDataGenerator
+        except ImportError as e:
+            logger.error(f"Failed to import TrainingDataGenerator: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="Training data generator module not available"
+            )
+        
+        # Initialize generator
+        generator = TrainingDataGenerator(
+            aerospike_host=os.getenv("AEROSPIKE_HOST", "localhost"),
+            aerospike_port=int(os.getenv("AEROSPIKE_PORT", "3000"))
+        )
+        
+        # Connect to Aerospike
+        if not generator.connect_aerospike():
+            raise HTTPException(
+                status_code=503,
+                detail="Failed to connect to Aerospike for training data generation"
+            )
+        
+        try:
+            # Clear existing data if requested
+            if clear_existing:
+                logger.info("Clearing existing training data...")
+                generator.clear_training_data()
+            
+            # Generate synthetic training data
+            logger.info(f"Generating {samples} synthetic training samples...")
+            training_data = generator.generate_synthetic_features(
+                n_samples=samples,
+                random_seed=random_seed
+            )
+            
+            # Insert into Aerospike
+            success = generator.insert_training_data(training_data)
+            
+            if not success:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to insert training data into Aerospike"
+                )
+            
+            # Get final statistics
+            stats = generator.get_data_stats()
+            
+            return {
+                "message": "Training data generated successfully",
+                "samples_generated": len(training_data),
+                "samples_requested": samples,
+                "random_seed": random_seed,
+                "cleared_existing": clear_existing,
+                "final_stats": stats,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+        finally:
+            generator.disconnect_aerospike()
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Training data generation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Training data generation failed: {str(e)}"
+        )
+
 @app.post("/train/start")
 async def start_training(
     test_size: float = Query(0.2, ge=0.1, le=0.5, description="Test set size (0.1-0.5)"),

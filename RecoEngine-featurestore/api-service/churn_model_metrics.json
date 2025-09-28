@@ -1,0 +1,132 @@
+{
+  "training_duration_seconds": 0.238976,
+  "training_samples": 1600,
+  "test_samples": 400,
+  "feature_count": 36,
+  "train_accuracy": 1.0,
+  "test_accuracy": 0.945,
+  "test_precision": 0.9381443298969072,
+  "test_recall": 0.8504672897196262,
+  "test_f1": 0.8921568627450981,
+  "test_roc_auc": 0.9727600395521673,
+  "confusion_matrix": [
+    [
+      287,
+      6
+    ],
+    [
+      16,
+      91
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.9471947194719472,
+      "recall": 0.9795221843003413,
+      "f1-score": 0.9630872483221478,
+      "support": 293.0
+    },
+    "1": {
+      "precision": 0.9381443298969072,
+      "recall": 0.8504672897196262,
+      "f1-score": 0.8921568627450981,
+      "support": 107.0
+    },
+    "accuracy": 0.945,
+    "macro avg": {
+      "precision": 0.9426695246844272,
+      "recall": 0.9149947370099838,
+      "f1-score": 0.927622055533623,
+      "support": 400.0
+    },
+    "weighted avg": {
+      "precision": 0.9447737402606241,
+      "recall": 0.945,
+      "f1-score": 0.9441133701802868,
+      "support": 400.0
+    }
+  },
+  "trained_at": "2025-09-28T05:46:19.493307",
+  "model_params": {
+    "n_estimators": 100,
+    "max_depth": 6,
+    "learning_rate": 0.1,
+    "random_state": 42
+  },
+  "feature_columns": [
+    "acc_age_days",
+    "member_dur",
+    "loyalty_enc",
+    "geo_loc_enc",
+    "device_type_enc",
+    "pref_pay_enc",
+    "lang_pref_enc",
+    "days_last_login",
+    "days_last_purch",
+    "sess_7d",
+    "sess_30d",
+    "avg_sess_dur",
+    "ctr_10_sess",
+    "cart_abandon",
+    "wishlist_ratio",
+    "content_engage",
+    "avg_order_val",
+    "orders_6m",
+    "purch_freq_90d",
+    "last_hv_purch",
+    "refund_rate",
+    "sub_pay_enc",
+    "discount_dep",
+    "push_open_rate",
+    "email_ctr",
+    "inapp_ctr",
+    "promo_resp_time",
+    "retention_enc",
+    "tickets_90d",
+    "avg_ticket_res",
+    "csat_score",
+    "refund_req",
+    "curr_sess_clk",
+    "checkout_time",
+    "cart_no_buy",
+    "bounce_flag"
+  ],
+  "feature_importance": {
+    "acc_age_days": 0.02936965972185135,
+    "member_dur": 0.022085461765527725,
+    "loyalty_enc": 0.02396298386156559,
+    "geo_loc_enc": 0.02402777038514614,
+    "device_type_enc": 0.026085905730724335,
+    "pref_pay_enc": 0.032466184347867966,
+    "lang_pref_enc": 0.024631505832076073,
+    "days_last_login": 0.04007340967655182,
+    "days_last_purch": 0.03604014962911606,
+    "sess_7d": 0.01799987256526947,
+    "sess_30d": 0.01991601474583149,
+    "avg_sess_dur": 0.030237119644880295,
+    "ctr_10_sess": 0.024969041347503662,
+    "cart_abandon": 0.03196599707007408,
+    "wishlist_ratio": 0.02679331973195076,
+    "content_engage": 0.02485693246126175,
+    "avg_order_val": 0.037214379757642746,
+    "orders_6m": 0.03520132973790169,
+    "purch_freq_90d": 0.031223250553011894,
+    "last_hv_purch": 0.025384696200489998,
+    "refund_rate": 0.02274452894926071,
+    "sub_pay_enc": 0.01669161394238472,
+    "discount_dep": 0.026491686701774597,
+    "push_open_rate": 0.023940738290548325,
+    "email_ctr": 0.02020278573036194,
+    "inapp_ctr": 0.02928001992404461,
+    "promo_resp_time": 0.020064430311322212,
+    "retention_enc": 0.013356776908040047,
+    "tickets_90d": 0.020314088091254234,
+    "avg_ticket_res": 0.028363751247525215,
+    "csat_score": 0.08295231312513351,
+    "refund_req": 0.02658156305551529,
+    "curr_sess_clk": 0.023509668186306953,
+    "checkout_time": 0.03101763129234314,
+    "cart_no_buy": 0.017965877428650856,
+    "bounce_flag": 0.032017581164836884
+  }
+}
