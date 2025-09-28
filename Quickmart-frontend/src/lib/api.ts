@@ -15,6 +15,7 @@ import type {
     SearchParams,
     User,
     UserCoupon,
+    UserCouponWithDetails,
 } from '../types'
 
 // Create axios instance with base configuration
@@ -179,7 +180,7 @@ export const couponsApi = {
         return response.data
     },
 
-    getUserCoupons: async (): Promise<UserCoupon[]> => {
+    getUserCoupons: async (): Promise<UserCouponWithDetails[]> => {
         const response = await api.get('/api/coupons/user')
         return response.data
     },

@@ -208,17 +208,7 @@ export default function CouponsPage() {
                 </div>
             )}
 
-            {/* Available for Everyone */}
-            {availableCoupons.length > 0 && (
-                <div className="mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-900 mb-4">🏪 Available for Everyone</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {availableCoupons.map((coupon) => (
-                            <CouponCard key={coupon.code} coupon={coupon} />
-                        ))}
-                    </div>
-                </div>
-            )}
+
 
             {/* Empty State */}
             {availableCoupons.length === 0 && userCoupons.length === 0 && (
@@ -235,16 +225,7 @@ export default function CouponsPage() {
                 </div>
             )}
 
-            {/* Help Text */}
-            <div className="mt-12 bg-blue-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">💡 How to use your coupons</h3>
-                <ul className="text-blue-800 space-y-1 text-sm">
-                    <li>• Copy the coupon code by clicking the "Copy" button</li>
-                    <li>• Add items to your cart and proceed to checkout</li>
-                    <li>• Paste the coupon code in the discount field</li>
-                    <li>• Enjoy your savings!</li>
-                </ul>
-            </div>
+
         </div>
     )
 }

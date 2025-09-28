@@ -2,6 +2,8 @@ import { Search, ShoppingBag, Star } from 'lucide-react'
 import { useState } from 'react'
 import { useQuery } from 'react-query'
 import { Link, useSearchParams } from 'react-router-dom'
+import RecentCouponDisplay from '../../components/RecentCouponDisplay'
+import { useRecentCoupon } from '../../hooks/useRecentCoupon'
 import { productsApi } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
@@ -11,6 +13,7 @@ export default function ProductsPage() {
     const [searchParams] = useSearchParams()
     const { isAuthenticated, user } = useAuthStore()
     const { addItem } = useCartStore()
+    const { recentCoupon, loading: couponLoading } = useRecentCoupon()
     const [filters, setFilters] = useState({
         category: searchParams.get('category') || '',
         search: searchParams.get('search') || '',
@@ -73,13 +76,20 @@ export default function ProductsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Welcome Section for Authenticated Users */}
             {isAuthenticated && user && (
-                <div className="mb-8 p-6 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200">
-                    <h1 className="text-2xl font-bold text-primary-900 mb-2">
-                        Welcome back, {getUserDisplayName(user)}! 👋
-                    </h1>
-                    <p className="text-primary-700">
-                        Discover personalized products and exclusive deals curated just for you.
-                    </p>
+                <div className="mb-8">
+                    {/* Show recent coupon if available, otherwise show welcome message */}
+                    {!couponLoading && recentCoupon ? (
+                        <RecentCouponDisplay userCouponWithDetails={recentCoupon} />
+                    ) : (
+                        <div className="p-6 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200">
+                            <h1 className="text-2xl font-bold text-primary-900 mb-2">
+                                Welcome back, {getUserDisplayName(user)}! 👋
+                            </h1>
+                            <p className="text-primary-700">
+                                Check out our featured products below.
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
 
