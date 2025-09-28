@@ -8,47 +8,73 @@ A comprehensive e-commerce platform that integrates machine learning-based churn
 - **RecoEngine**: Churn prediction microservice using XGBoost and Aerospike feature store
 - **Shared Aerospike Database**: Real-time feature store and application data storage
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
-### Simple One-Command Startup
+Follow these 5 simple steps to get the complete QuickMart platform up and running:
+
+### Step 1: Start All Application Components
 ```bash
-# Start all services (infrastructure + RecoEngine + QuickMart Backend)
+# Start all services (infrastructure + RecoEngine + QuickMart Backend + Frontend)
 ./run.sh start
 
-# Check service status
+# Check that all services are running
 ./run.sh status
-
-# Run health checks
-./run.sh test
 ```
 
-### Manual Step-by-Step (Alternative)
+### Step 2: Load User Data
 ```bash
-# 1. Start shared infrastructure
-./run.sh infra
+# Load demo users with features into the system
+curl -X POST "http://localhost:3010/api/admin/load-data"
 
-# 2. Start RecoEngine
-./run.sh reco
-
-# 3. Start QuickMart Backend
-./run.sh quickmart
-
-# 4. Train the model (optional)
-./run.sh train
+# Verify users are loaded
+curl "http://localhost:3010/api/admin/users" | jq
 ```
 
-### Test the System
+### Step 3: Generate Training Data
 ```bash
-# Test RecoEngine prediction
-curl -X POST "http://localhost:8000/ingest/profile" \
-  -H "Content-Type: application/json" \
-  -d '{"user_id": "test_001", "acc_age_days": 365, "loyalty_tier": "gold"}'
+# Generate synthetic training data for the ML model (1000 samples)
+curl -X POST "http://localhost:8000/train/generate-data?samples=1000&clear_existing=true&random_seed=42"
 
-curl -X POST "http://localhost:8000/predict/test_001"
+# Check data quality
+curl "http://localhost:8000/train/data-quality" | jq
+```
 
-# Test QuickMart Backend
-curl http://localhost:3010/api/products
-curl http://localhost:3010/api/coupons/available
+### Step 4: Run Training Job
+```bash
+# Train the churn prediction model
+curl -X POST "http://localhost:8000/train/start?test_size=0.2&random_state=42"
+
+# Check training status
+curl "http://localhost:8000/train/status" | jq
+```
+
+### Step 5: Test Predict API for Seed User
+```bash
+# Test churn prediction for a demo user
+curl -X POST "http://localhost:8000/predict/user_001" | jq
+
+# Test with different users
+curl -X POST "http://localhost:8000/predict/user_002" | jq
+curl -X POST "http://localhost:8000/predict/user_003" | jq
+```
+
+### 🎉 Success! Your platform is ready!
+
+**Access Points:**
+- **Frontend**: http://localhost:3000
+- **QuickMart Backend API**: http://localhost:3010/docs
+- **RecoEngine API**: http://localhost:8000/docs
+- **Postman Collection**: Import `QuickMart_Complete_APIs.postman_collection.json`
+
+### Alternative: Fast Local Development
+For faster development with instant code changes:
+```bash
+# Run backend services locally (no Docker rebuilds needed)
+./run.sh local
+
+# Services will run on different ports:
+# - QuickMart Backend: http://localhost:3011
+# - RecoEngine: http://localhost:8001
 ```
 
 ## 📡 Services & Ports
@@ -192,26 +218,26 @@ The QuickMart Backend automatically creates 5 sample users for testing and demon
 
 | User ID | Email | Password | Name | Age | Location | Loyalty Tier | Preferred Categories | Preferred Brands |
 |---------|-------|----------|------|-----|----------|--------------|---------------------|------------------|
-| `user_001` | `john.doe@example.com` | `john.doe` | John Doe | 28 | New York, NY | Gold | Electronics, Books & Media | Apple, Samsung |
-| `user_002` | `jane.smith@example.com` | `jane.smith` | Jane Smith | 34 | Los Angeles, CA | Platinum | Clothing, Home & Garden | Nike, Dyson |
-| `user_003` | `mike.johnson@example.com` | `mike.johnson` | Mike Johnson | 22 | Chicago, IL | Bronze | Sports & Fitness, Electronics | Peloton, Sony |
-| `user_004` | `sarah.wilson@example.com` | `sarah.wilson` | Sarah Wilson | 45 | Houston, TX | Silver | Home & Garden, Books & Media | Instant Pot, Levi's |
-| `user_005` | `demo@quickmart.com` | `demo` | Demo User | 30 | San Francisco, CA | Gold | Electronics, Clothing | Apple, Nike |
+| `user_001` | `john.doe@example.com` | `admin` | John Doe | 28 | New York, NY | Gold | Electronics, Books & Media | Apple, Samsung |
+| `user_002` | `jane.smith@example.com` | `admin` | Jane Smith | 34 | Los Angeles, CA | Platinum | Clothing, Home & Garden | Nike, Dyson |
+| `user_003` | `mike.johnson@example.com` | `admin` | Mike Johnson | 22 | Chicago, IL | Bronze | Sports & Fitness, Electronics | Peloton, Sony |
+| `user_004` | `sarah.wilson@example.com` | `admin` | Sarah Wilson | 45 | Houston, TX | Silver | Home & Garden, Books & Media | Instant Pot, Levi's |
+| `user_005` | `demo@quickmart.com` | `admin` | Demo User | 30 | San Francisco, CA | Gold | Electronics, Clothing | Apple, Nike |
 
 ### Quick Login Test
 ```bash
 # Login as demo user
 curl -X POST "http://localhost:3010/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email": "demo@quickmart.com", "password": "demo"}'
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'username=demo@quickmart.com&password=admin'
 
 # Login as John Doe  
 curl -X POST "http://localhost:3010/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email": "john.doe@example.com", "password": "john.doe"}'
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'username=john.doe@example.com&password=admin'
 ```
 
-**Note**: Password is always the part before @ in the email address.
+**Note**: All demo users have the default password `admin` for easy testing.
 
 ## 📈 Monitoring & Health Checks
 

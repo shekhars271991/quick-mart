@@ -41,8 +41,11 @@ class TrainingDataGenerator:
     def connect_aerospike(self):
         """Connect to Aerospike"""
         config = {
-            'hosts': [(self.aerospike_host, self.aerospike_port)]
-        }
+            'hosts': [(self.aerospike_host, self.aerospike_port)],
+            'policies': {
+                        'write': {'key': aerospike.POLICY_KEY_SEND}
+                    }
+         }
         try:
             logger.info(f"Connecting to Aerospike at {self.aerospike_host}:{self.aerospike_port}")
             self.client = aerospike.client(config).connect()

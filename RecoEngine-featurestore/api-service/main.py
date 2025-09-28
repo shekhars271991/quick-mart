@@ -40,7 +40,10 @@ def connect_aerospike():
     """Connect to Aerospike with retry logic"""
     global client
     config = {
-        'hosts': [(AEROSPIKE_HOST, AEROSPIKE_PORT)]
+        'hosts': [(AEROSPIKE_HOST, AEROSPIKE_PORT)],
+        'policies': {
+            'write': {'key': aerospike.POLICY_KEY_SEND}
+        }
     }
     try:
         logger.info(f"Attempting to connect to Aerospike at {AEROSPIKE_HOST}:{AEROSPIKE_PORT}")

@@ -21,7 +21,10 @@ class DatabaseManager:
         """Connect to Aerospike database"""
         try:
             config = {
-                'hosts': [(settings.AEROSPIKE_HOST, settings.AEROSPIKE_PORT)]
+                'hosts': [(settings.AEROSPIKE_HOST, settings.AEROSPIKE_PORT)],
+                'policies': {
+                    'write': {'key': aerospike.POLICY_KEY_SEND}
+                }
             }
             
             self.client = aerospike.client(config)

@@ -206,7 +206,10 @@ class AerospikeDataManager:
     def connect(self):
         """Connect to Aerospike"""
         try:
-            config = {'hosts': [(self.host, self.port)]}
+            config = {'hosts': [(self.host, self.port)] , 'policies': {
+                        'write': {'key': aerospike.POLICY_KEY_SEND}
+                    }
+                }
             self.client = aerospike.client(config).connect()
             logger.info(f"Connected to Aerospike at {self.host}:{self.port}")
         except Exception as e:
