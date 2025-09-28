@@ -125,11 +125,18 @@ export interface UserCoupon {
     user_coupon_id: string
     user_id: string
     coupon_id: string
-    coupon: Coupon
+    source: 'general' | 'nudge' | 'loyalty' | 'promotion'
+    nudge_id?: string
+    churn_score?: number
+    status: 'available' | 'used' | 'expired'
     assigned_at: string
     used_at?: string
-    is_used: boolean
-    source: 'general' | 'nudge' | 'loyalty' | 'promotion'
+    order_id?: string
+}
+
+export interface UserCouponWithDetails {
+    user_coupon: UserCoupon
+    coupon: Coupon
 }
 
 export interface CouponValidation {

@@ -14,9 +14,9 @@ export function useCouponNotifications() {
             try {
                 const userCoupons = await couponsApi.getUserCoupons()
                 const churnPreventionCoupons = userCoupons.filter(
-                    coupon => coupon.created_by_system === 'churn_prevention' &&
-                        coupon.is_active &&
-                        (!coupon.valid_until || new Date(coupon.valid_until) > new Date())
+                    userCouponWithDetails => userCouponWithDetails.user_coupon.source === 'nudge' &&
+                        userCouponWithDetails.coupon.is_active &&
+                        (!userCouponWithDetails.coupon.valid_until || new Date(userCouponWithDetails.coupon.valid_until) > new Date())
                 )
 
                 setPersonalizedCouponsCount(churnPreventionCoupons.length)
@@ -25,9 +25,9 @@ export function useCouponNotifications() {
                 const now = new Date()
                 const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
-                const newCoupons = churnPreventionCoupons.filter(coupon => {
-                    const createdAt = coupon.created_at ? new Date(coupon.created_at) : new Date(coupon.valid_from || 0)
-                    return createdAt > oneDayAgo
+                const newCoupons = churnPreventionCoupons.filter(userCouponWithDetails => {
+                    const assignedAt = new Date(userCouponWithDetails.user_coupon.assigned_at)
+                    return assignedAt > oneDayAgo
                 })
 
                 setHasNewPersonalizedCoupons(newCoupons.length > 0)

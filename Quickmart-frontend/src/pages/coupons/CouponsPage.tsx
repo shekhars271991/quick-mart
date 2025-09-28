@@ -2,16 +2,20 @@ import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { couponsApi } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
-import type { Coupon, UserCoupon } from '../../types'
+import type { Coupon, UserCouponWithDetails } from '../../types'
 
 interface CouponCardProps {
-    coupon: Coupon | UserCoupon
+    coupon: Coupon | UserCouponWithDetails
     isUserSpecific?: boolean
 }
 
 function CouponCard({ coupon, isUserSpecific = false }: CouponCardProps) {
-    const isExpired = coupon.valid_until ? new Date(coupon.valid_until) < new Date() : false
-    const isChurnPrevention = coupon.created_by_system === 'churn_prevention'
+    // Handle both direct Coupon and UserCouponWithDetails
+    const actualCoupon = 'coupon' in coupon ? coupon.coupon : coupon
+    const userCoupon = 'user_coupon' in coupon ? coupon.user_coupon : null
+
+    const isExpired = actualCoupon.valid_until ? new Date(actualCoupon.valid_until) < new Date() : false
+    const isChurnPrevention = userCoupon?.source === 'nudge'
 
     const copyToClipboard = (code: string) => {
         navigator.clipboard.writeText(code)
@@ -27,21 +31,21 @@ function CouponCard({ coupon, isUserSpecific = false }: CouponCardProps) {
     }
 
     const getDiscountText = () => {
-        if (coupon.discount_type === 'percentage') {
-            return `${coupon.discount_value}% OFF`
+        if (actualCoupon.discount_type === 'percentage') {
+            return `${actualCoupon.discount_value}% OFF`
         } else {
-            return `$${coupon.discount_value} OFF`
+            return `$${actualCoupon.discount_value} OFF`
         }
     }
 
     return (
         <div className={`bg-white rounded-lg shadow-md border-2 p-6 transition-all hover:shadow-lg ${isChurnPrevention ? 'border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50' :
-                isExpired ? 'border-gray-200 opacity-60' : 'border-green-200'
+            isExpired ? 'border-gray-200 opacity-60' : 'border-green-200'
             }`}>
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{coupon.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{actualCoupon.name}</h3>
                     {isChurnPrevention && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
                             🎯 Personalized Offer
@@ -49,15 +53,15 @@ function CouponCard({ coupon, isUserSpecific = false }: CouponCardProps) {
                     )}
                 </div>
                 <div className={`text-2xl font-bold ${isChurnPrevention ? 'text-purple-600' :
-                        isExpired ? 'text-gray-400' : 'text-green-600'
+                    isExpired ? 'text-gray-400' : 'text-green-600'
                     }`}>
                     {getDiscountText()}
                 </div>
             </div>
 
             {/* Description */}
-            {coupon.description && (
-                <p className="text-gray-600 text-sm mb-4">{coupon.description}</p>
+            {actualCoupon.description && (
+                <p className="text-gray-600 text-sm mb-4">{actualCoupon.description}</p>
             )}
 
             {/* Coupon Code */}
@@ -65,10 +69,10 @@ function CouponCard({ coupon, isUserSpecific = false }: CouponCardProps) {
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-xs text-gray-500 uppercase tracking-wide">Coupon Code</p>
-                        <p className="text-lg font-mono font-bold text-gray-900">{coupon.code}</p>
+                        <p className="text-lg font-mono font-bold text-gray-900">{actualCoupon.code}</p>
                     </div>
                     <button
-                        onClick={() => copyToClipboard(coupon.code)}
+                        onClick={() => copyToClipboard(actualCoupon.code)}
                         className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors"
                         disabled={isExpired}
                     >
@@ -79,15 +83,15 @@ function CouponCard({ coupon, isUserSpecific = false }: CouponCardProps) {
 
             {/* Details */}
             <div className="space-y-2 text-sm text-gray-600">
-                {coupon.minimum_order_value > 0 && (
-                    <p>• Minimum order: ${coupon.minimum_order_value}</p>
+                {actualCoupon.minimum_order_value > 0 && (
+                    <p>• Minimum order: ${actualCoupon.minimum_order_value}</p>
                 )}
-                {coupon.usage_limit && (
-                    <p>• Usage limit: {coupon.usage_limit} time{coupon.usage_limit > 1 ? 's' : ''}</p>
+                {actualCoupon.usage_limit && (
+                    <p>• Usage limit: {actualCoupon.usage_limit} time{actualCoupon.usage_limit > 1 ? 's' : ''}</p>
                 )}
-                {coupon.valid_until && (
+                {actualCoupon.valid_until && (
                     <p className={isExpired ? 'text-red-500' : ''}>
-                        • {isExpired ? 'Expired' : 'Valid until'}: {formatDate(coupon.valid_until)}
+                        • {isExpired ? 'Expired' : 'Valid until'}: {formatDate(actualCoupon.valid_until)}
                     </p>
                 )}
                 {isUserSpecific && (
@@ -98,8 +102,8 @@ function CouponCard({ coupon, isUserSpecific = false }: CouponCardProps) {
             {/* Status */}
             <div className="mt-4 pt-4 border-t border-gray-200">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isExpired ? 'bg-red-100 text-red-800' :
-                        isChurnPrevention ? 'bg-purple-100 text-purple-800' :
-                            'bg-green-100 text-green-800'
+                    isChurnPrevention ? 'bg-purple-100 text-purple-800' :
+                        'bg-green-100 text-green-800'
                     }`}>
                     {isExpired ? '❌ Expired' :
                         isChurnPrevention ? '🎁 Special Offer' :
@@ -112,7 +116,7 @@ function CouponCard({ coupon, isUserSpecific = false }: CouponCardProps) {
 
 export default function CouponsPage() {
     const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([])
-    const [userCoupons, setUserCoupons] = useState<UserCoupon[]>([])
+    const [userCoupons, setUserCoupons] = useState<UserCouponWithDetails[]>([])
     const [loading, setLoading] = useState(true)
     const { isAuthenticated } = useAuthStore()
 
@@ -164,8 +168,8 @@ export default function CouponsPage() {
     }
 
     // Separate churn prevention coupons from regular user coupons
-    const churnPreventionCoupons = userCoupons.filter(coupon => coupon.created_by_system === 'churn_prevention')
-    const regularUserCoupons = userCoupons.filter(coupon => coupon.created_by_system !== 'churn_prevention')
+    const churnPreventionCoupons = userCoupons.filter(userCouponWithDetails => userCouponWithDetails.user_coupon.source === 'nudge')
+    const regularUserCoupons = userCoupons.filter(userCouponWithDetails => userCouponWithDetails.user_coupon.source !== 'nudge')
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -185,8 +189,8 @@ export default function CouponsPage() {
                     </div>
                     <p className="text-gray-600 mb-6">Special offers created based on your shopping preferences</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {churnPreventionCoupons.map((coupon) => (
-                            <CouponCard key={coupon.code} coupon={coupon} isUserSpecific={true} />
+                        {churnPreventionCoupons.map((userCouponWithDetails) => (
+                            <CouponCard key={userCouponWithDetails.user_coupon.user_coupon_id} coupon={userCouponWithDetails} isUserSpecific={true} />
                         ))}
                     </div>
                 </div>
@@ -197,8 +201,8 @@ export default function CouponsPage() {
                 <div className="mb-8">
                     <h2 className="text-2xl font-semibold text-gray-900 mb-4">🎁 Your Exclusive Coupons</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {regularUserCoupons.map((coupon) => (
-                            <CouponCard key={coupon.code} coupon={coupon} isUserSpecific={true} />
+                        {regularUserCoupons.map((userCouponWithDetails) => (
+                            <CouponCard key={userCouponWithDetails.user_coupon.user_coupon_id} coupon={userCouponWithDetails} isUserSpecific={true} />
                         ))}
                     </div>
                 </div>
