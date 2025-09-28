@@ -12,7 +12,58 @@
         "brands": [
             "Apple",
             "Samsung"
-        ]
+        ],
+        "features": {
+            "profile": {
+                "acc_age_days": 850,
+                "member_dur": 28,
+                "loyalty_enc": 3,
+                "geo_loc_enc": 2,
+                "device_type_enc": 1,
+                "pref_pay_enc": 1,
+                "lang_pref_enc": 1
+            },
+            "behavior": {
+                "days_last_login": 2,
+                "days_last_purch": 15,
+                "sess_7d": 12,
+                "sess_30d": 45,
+                "avg_sess_dur": 18.5,
+                "ctr_10_sess": 0.75,
+                "cart_abandon": 0.15,
+                "wishlist_ratio": 0.25,
+                "content_engage": 0.80
+            },
+            "transactional": {
+                "avg_order_val": 125.50,
+                "orders_6m": 24,
+                "purch_freq_90d": 8,
+                "last_hv_purch": 30,
+                "refund_rate": 0.02,
+                "sub_pay_enc": 1,
+                "discount_dep": 0.30
+            },
+            "engagement": {
+                "push_open_rate": 0.65,
+                "email_ctr": 0.75,
+                "inapp_ctr": 0.85,
+                "promo_resp_time": 2.5,
+                "retention_enc": 1
+            },
+            "support": {
+                "tickets_90d": 2,
+                "avg_ticket_res": 24.5,
+                "csat_score": 4.2,
+                "refund_req": 1
+            },
+            "realtime": {
+                "curr_sess_clk": 15,
+                "checkout_time": 3.2,
+                "cart_no_buy": 0,
+                "bounce_flag": 0
+            }
+        },
+        "comment": "High-value loyal customer with consistent purchasing behavior, strong digital engagement, and low churn risk. Regular buyer of premium electronics with good email engagement."
     },
     {
         "email": "jane.smith@example.com",
@@ -27,7 +78,58 @@
         "brands": [
             "Nike",
             "Dyson"
-        ]
+        ],
+        "features": {
+            "profile": {
+                "acc_age_days": 1200,
+                "member_dur": 40,
+                "loyalty_enc": 4,
+                "geo_loc_enc": 1,
+                "device_type_enc": 1,
+                "pref_pay_enc": 1,
+                "lang_pref_enc": 1
+            },
+            "behavior": {
+                "days_last_login": 1,
+                "days_last_purch": 8,
+                "sess_7d": 18,
+                "sess_30d": 65,
+                "avg_sess_dur": 25.3,
+                "ctr_10_sess": 0.90,
+                "cart_abandon": 0.08,
+                "wishlist_ratio": 0.35,
+                "content_engage": 0.95
+            },
+            "transactional": {
+                "avg_order_val": 185.25,
+                "orders_6m": 42,
+                "purch_freq_90d": 15,
+                "last_hv_purch": 15,
+                "refund_rate": 0.04,
+                "sub_pay_enc": 1,
+                "discount_dep": 0.20
+            },
+            "engagement": {
+                "push_open_rate": 0.85,
+                "email_ctr": 0.90,
+                "inapp_ctr": 0.95,
+                "promo_resp_time": 1.8,
+                "retention_enc": 1
+            },
+            "support": {
+                "tickets_90d": 1,
+                "avg_ticket_res": 12.0,
+                "csat_score": 4.8,
+                "refund_req": 3
+            },
+            "realtime": {
+                "curr_sess_clk": 22,
+                "checkout_time": 2.1,
+                "cart_no_buy": 0,
+                "bounce_flag": 0
+            }
+        },
+        "comment": "Premium platinum customer with highest engagement metrics, very low churn risk. Frequent purchaser with high order values and excellent app usage patterns."
     },
     {
         "email": "mike.johnson@example.com",
@@ -42,7 +144,58 @@
         "brands": [
             "Peloton",
             "Sony"
-        ]
+        ],
+        "features": {
+            "profile": {
+                "acc_age_days": 180,
+                "member_dur": 6,
+                "loyalty_enc": 1,
+                "geo_loc_enc": 3,
+                "device_type_enc": 1,
+                "pref_pay_enc": 2,
+                "lang_pref_enc": 1
+            },
+            "behavior": {
+                "days_last_login": 7,
+                "days_last_purch": 45,
+                "sess_7d": 3,
+                "sess_30d": 8,
+                "avg_sess_dur": 8.2,
+                "ctr_10_sess": 0.35,
+                "cart_abandon": 0.35,
+                "wishlist_ratio": 0.15,
+                "content_engage": 0.40
+            },
+            "transactional": {
+                "avg_order_val": 75.30,
+                "orders_6m": 12,
+                "purch_freq_90d": 3,
+                "last_hv_purch": 60,
+                "refund_rate": 0.00,
+                "sub_pay_enc": 2,
+                "discount_dep": 0.70
+            },
+            "engagement": {
+                "push_open_rate": 0.30,
+                "email_ctr": 0.25,
+                "inapp_ctr": 0.60,
+                "promo_resp_time": 5.2,
+                "retention_enc": 3
+            },
+            "support": {
+                "tickets_90d": 0,
+                "avg_ticket_res": 0.0,
+                "csat_score": 0.0,
+                "refund_req": 0
+            },
+            "realtime": {
+                "curr_sess_clk": 5,
+                "checkout_time": 8.5,
+                "cart_no_buy": 1,
+                "bounce_flag": 1
+            }
+        },
+        "comment": "Young customer with sporadic purchasing behavior and high price sensitivity. Moderate churn risk due to long gaps between purchases and low engagement rates."
     },
     {
         "email": "sarah.wilson@example.com",
@@ -57,7 +210,58 @@
         "brands": [
             "Instant Pot",
             "Levi's"
-        ]
+        ],
+        "features": {
+            "profile": {
+                "acc_age_days": 650,
+                "member_dur": 22,
+                "loyalty_enc": 2,
+                "geo_loc_enc": 3,
+                "device_type_enc": 2,
+                "pref_pay_enc": 1,
+                "lang_pref_enc": 1
+            },
+            "behavior": {
+                "days_last_login": 4,
+                "days_last_purch": 25,
+                "sess_7d": 8,
+                "sess_30d": 25,
+                "avg_sess_dur": 12.8,
+                "ctr_10_sess": 0.55,
+                "cart_abandon": 0.22,
+                "wishlist_ratio": 0.30,
+                "content_engage": 0.60
+            },
+            "transactional": {
+                "avg_order_val": 95.75,
+                "orders_6m": 18,
+                "purch_freq_90d": 6,
+                "last_hv_purch": 45,
+                "refund_rate": 0.06,
+                "sub_pay_enc": 1,
+                "discount_dep": 0.45
+            },
+            "engagement": {
+                "push_open_rate": 0.50,
+                "email_ctr": 0.55,
+                "inapp_ctr": 0.45,
+                "promo_resp_time": 3.8,
+                "retention_enc": 2
+            },
+            "support": {
+                "tickets_90d": 4,
+                "avg_ticket_res": 36.5,
+                "csat_score": 3.5,
+                "refund_req": 2
+            },
+            "realtime": {
+                "curr_sess_clk": 8,
+                "checkout_time": 5.2,
+                "cart_no_buy": 0,
+                "bounce_flag": 0
+            }
+        },
+        "comment": "Steady middle-tier customer with moderate engagement. Some customer service needs and returns indicate potential satisfaction issues. Medium churn risk."
     },
     {
         "email": "demo@quickmart.com",
@@ -72,6 +276,57 @@
         "brands": [
             "Apple",
             "Nike"
-        ]
+        ],
+        "features": {
+            "profile": {
+                "acc_age_days": 400,
+                "member_dur": 13,
+                "loyalty_enc": 3,
+                "geo_loc_enc": 1,
+                "device_type_enc": 1,
+                "pref_pay_enc": 3,
+                "lang_pref_enc": 1
+            },
+            "behavior": {
+                "days_last_login": 15,
+                "days_last_purch": 60,
+                "sess_7d": 2,
+                "sess_30d": 5,
+                "avg_sess_dur": 6.5,
+                "ctr_10_sess": 0.25,
+                "cart_abandon": 0.50,
+                "wishlist_ratio": 0.10,
+                "content_engage": 0.30
+            },
+            "transactional": {
+                "avg_order_val": 110.40,
+                "orders_6m": 8,
+                "purch_freq_90d": 2,
+                "last_hv_purch": 90,
+                "refund_rate": 0.04,
+                "sub_pay_enc": 2,
+                "discount_dep": 0.60
+            },
+            "engagement": {
+                "push_open_rate": 0.20,
+                "email_ctr": 0.35,
+                "inapp_ctr": 0.30,
+                "promo_resp_time": 7.5,
+                "retention_enc": 2
+            },
+            "support": {
+                "tickets_90d": 1,
+                "avg_ticket_res": 48.0,
+                "csat_score": 3.0,
+                "refund_req": 1
+            },
+            "realtime": {
+                "curr_sess_clk": 3,
+                "checkout_time": 12.8,
+                "cart_no_buy": 2,
+                "bounce_flag": 1
+            }
+        },
+        "comment": "Demo account showing declining engagement patterns with long purchase gaps and high cart abandonment. High churn risk despite gold tier status."
     }
 ]

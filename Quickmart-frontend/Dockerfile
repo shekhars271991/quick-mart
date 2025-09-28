@@ -9,11 +9,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev dependencies needed for build)
+RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Install platform-specific rollup binary if needed
+RUN npm install @rollup/rollup-linux-arm64-musl --save-dev || true
 
 # Build the application
 RUN npm run build

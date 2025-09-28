@@ -10,6 +10,7 @@ import logging
 from contextlib import asynccontextmanager
 from model_predictor import churn_predictor, get_model_health
 from nudge_engine import nudge_engine, get_nudge_health, NudgeResponse
+from training_service import ModelTrainer, get_training_status
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -142,7 +143,7 @@ def store_features_in_aerospike(user_id: str, features: Dict[str, Any], feature_
     
     try:
         namespace = "churn_features"
-        set_name = "users"
+        set_name = "user_features"
         key_name = user_id + "_" + feature_type
         key = (namespace, set_name, key_name)
         features_with_timestamp = {
@@ -174,7 +175,7 @@ def retrieve_all_features(user_id: str) -> Dict[str, Any]:
     for feature_type in feature_types:
         try:
             namespace = "churn_features"
-            set_name = "users"
+            set_name = "user_features"
             key_name = user_id + "_" + feature_type
             key = (namespace, set_name, key_name)
             (key, metadata, bins) = client.get(key)
@@ -379,6 +380,142 @@ async def test_nudge_rules(
 ):
     """Test which rule would match for given parameters"""
     return nudge_engine.test_rules(user_id, churn_probability, churn_reasons)
+
+# Training endpoints
+@app.post("/train/start")
+async def start_training(
+    test_size: float = Query(0.2, ge=0.1, le=0.5, description="Test set size (0.1-0.5)"),
+    random_state: int = Query(42, description="Random seed for reproducibility")
+):
+    """Start model training job using data from Aerospike"""
+    try:
+        logger.info("Starting model training job...")
+        
+        # Initialize trainer
+        trainer = ModelTrainer(client)
+        
+        # Load training data
+        df, X, y = trainer.load_training_data()
+        
+        # Validate data quality
+        quality_report = trainer.validate_data_quality(df)
+        
+        if quality_report['quality_score'] < 50:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Data quality too low for training: {quality_report['quality_score']:.1f}/100. Issues: {quality_report['issues']}"
+            )
+        
+        # Train the model
+        training_metrics = trainer.train_model(X, y, test_size=test_size, random_state=random_state)
+        
+        # Save the model
+        model_saved = trainer.save_model()
+        
+        if not model_saved:
+            raise HTTPException(
+                status_code=500,
+                detail="Model training completed but failed to save model"
+            )
+        
+        # Reload the predictor with new model
+        try:
+            churn_predictor.load_or_create_model()
+            logger.info("Churn predictor reloaded with new model")
+        except Exception as e:
+            logger.warning(f"Failed to reload predictor: {e}")
+        
+        return {
+            "message": "Model training completed successfully",
+            "training_metrics": training_metrics,
+            "data_quality": quality_report,
+            "model_saved": model_saved
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Training job failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Training job failed: {str(e)}"
+        )
+
+@app.get("/train/status")
+async def get_training_status_endpoint():
+    """Get current training status and model information"""
+    try:
+        status = get_training_status()
+        
+        # Add model health information
+        model_health = get_model_health()
+        status.update(model_health)
+        
+        # Add metrics if available
+        if status['metrics_available']:
+            try:
+                with open("churn_model_metrics.json", 'r') as f:
+                    metrics = json.load(f)
+                    status['last_training_metrics'] = {
+                        'trained_at': metrics.get('trained_at'),
+                        'test_accuracy': metrics.get('test_accuracy'),
+                        'test_f1': metrics.get('test_f1'),
+                        'test_roc_auc': metrics.get('test_roc_auc'),
+                        'training_samples': metrics.get('training_samples'),
+                        'feature_count': metrics.get('feature_count')
+                    }
+            except Exception as e:
+                logger.warning(f"Failed to load training metrics: {e}")
+        
+        return status
+        
+    except Exception as e:
+        logger.error(f"Failed to get training status: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get training status: {str(e)}"
+        )
+
+@app.get("/train/metrics")
+async def get_training_metrics():
+    """Get detailed training metrics from the last training job"""
+    try:
+        if not os.path.exists("churn_model_metrics.json"):
+            raise HTTPException(
+                status_code=404,
+                detail="No training metrics available. Train a model first."
+            )
+        
+        with open("churn_model_metrics.json", 'r') as f:
+            metrics = json.load(f)
+        
+        return metrics
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get training metrics: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get training metrics: {str(e)}"
+        )
+
+@app.get("/train/data-quality")
+async def check_data_quality():
+    """Check the quality of training data in Aerospike"""
+    try:
+        trainer = ModelTrainer(client)
+        df, _, _ = trainer.load_training_data()
+        quality_report = trainer.validate_data_quality(df)
+        
+        return quality_report
+        
+    except Exception as e:
+        logger.error(f"Failed to check data quality: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to check data quality: {str(e)}"
+        )
 
 if __name__ == "__main__":
     import uvicorn

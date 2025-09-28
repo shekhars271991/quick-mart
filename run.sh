@@ -188,9 +188,32 @@ stop_services() {
 # Function to restart all services
 restart_services() {
     print_header "${GEAR} Restarting All Services"
-    stop_services
-    sleep 2
-    start_all
+    
+    print_status "${GEAR} Restarting QuickMart Backend (with volume mounts)..." $YELLOW
+    cd QuickMart-backend && docker-compose restart quickmart-backend && cd ..
+    
+    print_status "${GEAR} Restarting RecoEngine..." $YELLOW
+    cd RecoEngine-featurestore && docker-compose restart && cd ..
+    
+    print_status "${GEAR} Restarting shared infrastructure..." $YELLOW
+    docker-compose restart
+    
+    sleep 3
+    print_status "${CHECK} All services restarted!" $GREEN
+    show_status
+}
+
+# Function to quickly restart just the backend (for development)
+restart_backend() {
+    print_header "${CART} Quick Backend Restart"
+    
+    print_status "${GEAR} Restarting QuickMart Backend only..." $YELLOW
+    cd QuickMart-backend && docker-compose restart quickmart-backend && cd ..
+    
+    # Wait for backend to be ready
+    wait_for_service "QuickMart Backend" "3010"
+    
+    print_status "${CHECK} Backend restarted successfully!" $GREEN
 }
 
 # Function to show logs
@@ -220,6 +243,34 @@ show_logs() {
     esac
 }
 
+# Function to rebuild all services
+rebuild_all() {
+    print_header "${GEAR} Rebuilding All Services"
+    
+    print_status "${GEAR} Stopping all services..." $YELLOW
+    stop_services
+    
+    print_status "${GEAR} Rebuilding shared infrastructure..." $YELLOW
+    docker-compose build --no-cache
+    
+    print_status "${GEAR} Rebuilding RecoEngine services..." $YELLOW
+    cd RecoEngine-featurestore
+    docker-compose build --no-cache
+    cd ..
+    
+    print_status "${GEAR} Rebuilding QuickMart Backend..." $YELLOW
+    cd QuickMart-backend
+    docker-compose build --no-cache
+    cd ..
+    
+    print_status "${GEAR} Rebuilding QuickMart Frontend..." $YELLOW
+    cd Quickmart-frontend
+    docker-compose build --no-cache
+    cd ..
+    
+    print_status "${CHECK} All services rebuilt successfully!" $GREEN
+}
+
 # Function to start all services
 start_all() {
     print_header "${ROCKET} Starting QuickMart Platform"
@@ -234,6 +285,15 @@ start_all() {
     show_status
 }
 
+# Function to rebuild and start all services
+rebuild_and_start() {
+    print_header "${ROCKET} Rebuilding and Starting QuickMart Platform"
+    
+    rebuild_all
+    sleep 2
+    start_all
+}
+
 # Function to show help
 show_help() {
     echo -e "${CYAN}QuickMart Services Management${NC}"
@@ -242,9 +302,12 @@ show_help() {
     echo -e "${YELLOW}Usage:${NC} ./run.sh [command] [options]"
     echo ""
     echo -e "${YELLOW}Commands:${NC}"
-        echo -e "  ${GREEN}start${NC}           Start all services (infrastructure + RecoEngine + QuickMart + Frontend)"
+    echo -e "  ${GREEN}start${NC}           Start all services (infrastructure + RecoEngine + QuickMart + Frontend)"
+    echo -e "  ${GREEN}rebuild${NC}         Rebuild all Docker containers with --no-cache"
+    echo -e "  ${GREEN}fresh${NC}           Rebuild and start all services (recommended for updates)"
     echo -e "  ${GREEN}stop${NC}            Stop all services"
     echo -e "  ${GREEN}restart${NC}         Restart all services"
+    echo -e "  ${GREEN}restart-backend${NC} Quick restart of just the backend (for development)"
     echo -e "  ${GREEN}status${NC}          Show service status and health"
     echo -e "  ${GREEN}train${NC}           Train RecoEngine model with synthetic data"
     echo -e "  ${GREEN}test${NC}            Run health checks for all services"
@@ -256,11 +319,14 @@ show_help() {
     echo -e "  ${GREEN}quickmart${NC}       Start only QuickMart Backend service"
     echo ""
     echo -e "${YELLOW}Examples:${NC}"
+    echo -e "  ${BLUE}./run.sh fresh${NC}        # Rebuild and start all services (recommended)"
     echo -e "  ${BLUE}./run.sh start${NC}        # Start all services"
+    echo -e "  ${BLUE}./run.sh rebuild${NC}      # Rebuild all containers"
     echo -e "  ${BLUE}./run.sh status${NC}       # Check service health"
     echo -e "  ${BLUE}./run.sh train${NC}        # Train ML model"
     echo -e "  ${BLUE}./run.sh logs reco${NC}    # Show RecoEngine logs"
     echo -e "  ${BLUE}./run.sh restart${NC}      # Restart everything"
+    echo -e "  ${BLUE}./run.sh restart-backend${NC} # Quick backend restart (for dev)"
     echo ""
     echo -e "${YELLOW}Service URLs:${NC}"
         echo -e "  ${BLUE}RecoEngine API:${NC}      http://localhost:8000/docs"
@@ -273,11 +339,20 @@ case "${1:-help}" in
     "start"|"up")
         start_all
         ;;
+    "rebuild")
+        rebuild_all
+        ;;
+    "rebuild-start"|"fresh")
+        rebuild_and_start
+        ;;
     "stop"|"down")
         stop_services
         ;;
     "restart")
         restart_services
+        ;;
+    "restart-backend"|"backend-restart")
+        restart_backend
         ;;
     "status"|"ps")
         show_status

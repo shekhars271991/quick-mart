@@ -3,15 +3,15 @@ Feature Configuration for Churn Prediction Model
 Shared between training and prediction services
 """
 
-# Feature columns in the order expected by the model
+# Feature columns in the order expected by the model (max 15 chars for Aerospike bin names)
 FEATURE_COLUMNS = [
-    'acc_age_days', 'member_dur', 'loyalty_tier_encoded', 'geo_location_encoded',
-    'device_type_encoded', 'pref_payment_encoded', 'lang_pref_encoded',
+    'acc_age_days', 'member_dur', 'loyalty_enc', 'geo_loc_enc',
+    'device_type_enc', 'pref_pay_enc', 'lang_pref_enc',
     'days_last_login', 'days_last_purch', 'sess_7d', 'sess_30d', 'avg_sess_dur',
     'ctr_10_sess', 'cart_abandon', 'wishlist_ratio', 'content_engage',
     'avg_order_val', 'orders_6m', 'purch_freq_90d', 'last_hv_purch', 'refund_rate',
-    'sub_pay_status_encoded', 'discount_dep', 'push_open_rate', 'email_ctr',
-    'inapp_ctr', 'promo_resp_time', 'retention_resp_encoded', 'tickets_90d',
+    'sub_pay_enc', 'discount_dep', 'push_open_rate', 'email_ctr',
+    'inapp_ctr', 'promo_resp_time', 'retention_enc', 'tickets_90d',
     'avg_ticket_res', 'csat_score', 'refund_req', 'curr_sess_clk', 'checkout_time',
     'cart_no_buy', 'bounce_flag'
 ]

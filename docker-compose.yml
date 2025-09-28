@@ -52,4 +52,3 @@ networks:
   quickmart_shared_network:
     driver: bridge
     name: quickmart_shared_network
-    external: false

@@ -129,12 +129,11 @@ class TrainingDataGenerator:
             churn_probability = self._calculate_churn_probability(features)
             churn_label = np.random.binomial(1, churn_probability)
             
-            # Create training record
+            # Create training record (only store features and label, not the intermediate probability)
             training_record = {
                 'user_id': user_id,
                 'features': features,
                 'churn_label': int(churn_label),
-                'churn_probability': float(churn_probability),
                 'generated_at': datetime.utcnow().isoformat(),
                 'data_type': 'synthetic_training'
             }
@@ -214,7 +213,6 @@ class TrainingDataGenerator:
                 bins = {
                     'user_id': record['user_id'],
                     'churn_label': record['churn_label'],
-                    'churn_prob': record['churn_probability'],  # Shortened to fit 15 char limit
                     'generated_at': record['generated_at'],
                     'data_type': record['data_type']
                 }

@@ -8,6 +8,8 @@ import json
 import os
 from pathlib import Path
 from datetime import datetime
+import httpx
+import asyncio
 
 from core.database import database_manager
 from core.auth import auth_manager
@@ -17,6 +19,35 @@ from models.user import User, UserProfile, UserPreferences
 logger = logging.getLogger(__name__)
 
 admin_router = APIRouter()
+
+# RecoEngine API configuration
+RECO_ENGINE_BASE_URL = os.getenv("RECO_ENGINE_URL", "http://localhost:8001")
+
+async def upload_user_features_to_reco_engine(user_id: str, features: dict):
+    """Upload user features to RecoEngine API"""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            feature_types = ["profile", "behavior", "transactional", "engagement", "support", "realtime"]
+            
+            for feature_type in feature_types:
+                if feature_type in features:
+                    feature_data = features[feature_type].copy()
+                    feature_data["user_id"] = user_id
+                    
+                    url = f"{RECO_ENGINE_BASE_URL}/ingest/{feature_type}"
+                    response = await client.post(url, json=feature_data)
+                    
+                    if response.status_code != 200:
+                        logger.warning(f"Failed to upload {feature_type} features for user {user_id}: {response.text}")
+                        return False
+                    else:
+                        logger.info(f"Successfully uploaded {feature_type} features for user {user_id}")
+            
+            return True
+            
+    except Exception as e:
+        logger.error(f"Error uploading features for user {user_id}: {str(e)}")
+        return False
 
 
 @admin_router.post("/load-data")
@@ -146,9 +177,15 @@ async def load_all_data():
                 for i, user_data in enumerate(users_data):
                     user_id = f"user_{str(i+1).zfill(3)}"
                     
-                    # Hash the password (using email prefix as password for demo)
-                    password = user_data["email"].split("@")[0]
-                    hashed_password = auth_manager.hash_password(password)
+                    # Hash the password (using default password for demo)
+                    password = "admin"
+                    logger.info(f"About to hash password: '{password}' (length: {len(password)})")
+                    try:
+                        hashed_password = auth_manager.hash_password(password)
+                        logger.info(f"Successfully hashed password for user {user_id}")
+                    except Exception as e:
+                        logger.error(f"Failed to hash password for user {user_id}: {e}")
+                        raise
                     
                     user = User(
                         user_id=user_id,
@@ -174,6 +211,12 @@ async def load_all_data():
                     
                     success = await database_manager.put("users", user_id, user_data_with_password)
                     if success:
+                        # Upload features to RecoEngine if they exist
+                        if "features" in user_data:
+                            feature_upload_success = await upload_user_features_to_reco_engine(user_id, user_data["features"])
+                            if not feature_upload_success:
+                                logger.warning(f"Failed to upload features for user {user_id}")
+                        
                         loaded_users.append({
                             "user_id": user_id,
                             "email": user_data["email"],
@@ -444,8 +487,8 @@ async def load_users():
         for i, user_data in enumerate(users_data):
             user_id = f"user_{str(i+1).zfill(3)}"
             
-            # Hash the password (using email prefix as password for demo)
-            password = user_data["email"].split("@")[0]  # e.g., "john.doe"
+            # Hash the password (using default password for demo)
+            password = "admin"
             hashed_password = auth_manager.hash_password(password)
             
             # Create User model instance
@@ -474,6 +517,12 @@ async def load_users():
             # Store in Aerospike
             success = await database_manager.put("users", user_id, user_data_with_password)
             if success:
+                # Upload features to RecoEngine if they exist
+                if "features" in user_data:
+                    feature_upload_success = await upload_user_features_to_reco_engine(user_id, user_data["features"])
+                    if not feature_upload_success:
+                        logger.warning(f"Failed to upload features for user {user_id}")
+                
                 loaded_users.append({
                     "user_id": user_id,
                     "email": user_data["email"],
@@ -488,7 +537,7 @@ async def load_users():
             "total_users": len(users_data),
             "loaded_users": len(loaded_users),
             "users": loaded_users,
-            "note": "Demo passwords are based on email prefixes (e.g., john.doe@example.com -> password: john.doe)"
+            "note": "All demo users have the default password: admin"
         }
         
     except FileNotFoundError:

@@ -14,6 +14,10 @@ services:
       - RECO_ENGINE_URL=http://reco_api_service:8000
       - JWT_SECRET=quickmart-jwt-secret-change-in-production
       - DEBUG=true
+    volumes:
+      # Mount source code for development (changes reflect immediately)
+      - ./app:/app/app
+      - ./data:/app/data
     networks:
       - quickmart_shared_network
     restart: unless-stopped
@@ -21,4 +25,3 @@ services:
 networks:
   quickmart_shared_network:
     external: true
-    name: quickmart_shared_network

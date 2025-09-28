@@ -14,21 +14,14 @@ services:
     networks:
       - quickmart_shared_network
     restart: unless-stopped
-    depends_on:
-      - quickmart-backend
+    external_links:
+      - quickmart_backend_api:quickmart-backend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  # Reference to backend service (external)
-  quickmart-backend:
-    external_links:
-      - quickmart_backend_api:quickmart-backend
-    networks:
-      - quickmart_shared_network
 
 networks:
   quickmart_shared_network:
