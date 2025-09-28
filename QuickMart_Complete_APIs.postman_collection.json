@@ -446,68 +446,17 @@
                                         "value": "application/json"
                                     }
                                 ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n  \"user_id\": \"user_12345\"\n}"
-                                },
                                 "url": {
-                                    "raw": "{{reco_url}}/predict/churn",
+                                    "raw": "{{reco_url}}/predict/{{test_user_id}}",
                                     "host": [
                                         "{{reco_url}}"
                                     ],
                                     "path": [
                                         "predict",
-                                        "churn"
+                                        "{{test_user_id}}"
                                     ]
                                 },
                                 "description": "Predict churn probability for a user"
-                            }
-                        },
-                        {
-                            "name": "Batch Predict Churn",
-                            "request": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n  \"user_ids\": [\"user_12345\", \"user_67890\", \"user_11111\"]\n}"
-                                },
-                                "url": {
-                                    "raw": "{{reco_url}}/predict/churn/batch",
-                                    "host": [
-                                        "{{reco_url}}"
-                                    ],
-                                    "path": [
-                                        "predict",
-                                        "churn",
-                                        "batch"
-                                    ]
-                                },
-                                "description": "Predict churn probability for multiple users"
-                            }
-                        },
-                        {
-                            "name": "Get Churn Insights",
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{reco_url}}/insights/churn/user_12345",
-                                    "host": [
-                                        "{{reco_url}}"
-                                    ],
-                                    "path": [
-                                        "insights",
-                                        "churn",
-                                        "user_12345"
-                                    ]
-                                },
-                                "description": "Get detailed churn insights and explanations for a user"
                             }
                         }
                     ]
@@ -516,29 +465,40 @@
                     "name": "Nudge Engine",
                     "item": [
                         {
-                            "name": "Get Nudges",
+                            "name": "Get All Nudge Rules",
                             "request": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n  \"user_id\": \"user_12345\",\n  \"churn_probability\": 0.75,\n  \"churn_reasons\": [\"low_engagement\", \"high_cart_abandonment\"]\n}"
-                                },
+                                "method": "GET",
+                                "header": [],
                                 "url": {
-                                    "raw": "{{reco_url}}/nudges",
+                                    "raw": "{{reco_url}}/nudge/rules",
                                     "host": [
                                         "{{reco_url}}"
                                     ],
                                     "path": [
-                                        "nudges"
+                                        "nudge",
+                                        "rules"
                                     ]
                                 },
-                                "description": "Get personalized nudges based on churn prediction"
+                                "description": "Get all available nudge rules"
+                            }
+                        },
+                        {
+                            "name": "Get Specific Nudge Rule",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/nudge/rules/discount_nudge",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "nudge",
+                                        "rules",
+                                        "discount_nudge"
+                                    ]
+                                },
+                                "description": "Get a specific nudge rule by ID"
                             }
                         },
                         {
@@ -547,19 +507,16 @@
                                 "method": "GET",
                                 "header": [],
                                 "url": {
-                                    "raw": "{{reco_url}}/nudges/test?user_id=user_12345&churn_probability=0.8&churn_reasons=low_engagement&churn_reasons=price_sensitivity",
+                                    "raw": "{{reco_url}}/nudge/test/{{test_user_id}}?churn_probability=0.8&churn_reasons=low_engagement&churn_reasons=price_sensitivity",
                                     "host": [
                                         "{{reco_url}}"
                                     ],
                                     "path": [
-                                        "nudges",
-                                        "test"
+                                        "nudge",
+                                        "test",
+                                        "{{test_user_id}}"
                                     ],
                                     "query": [
-                                        {
-                                            "key": "user_id",
-                                            "value": "user_12345"
-                                        },
                                         {
                                             "key": "churn_probability",
                                             "value": "0.8"
