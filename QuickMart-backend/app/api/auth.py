@@ -6,6 +6,9 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from datetime import datetime, timedelta
 import uuid
 import logging
+import httpx
+import asyncio
+import os
 
 from core.database import database_manager
 from core.auth import auth_manager, get_current_user
@@ -14,6 +17,42 @@ from models.user import User, UserCreate, UserLogin, UserResponse, UserProfile, 
 logger = logging.getLogger(__name__)
 
 auth_router = APIRouter()
+
+# RecoEngine configuration
+RECO_ENGINE_BASE_URL = os.getenv("RECO_ENGINE_URL", "http://localhost:8000")
+
+async def trigger_churn_prediction(user_id: str) -> dict:
+    """Trigger churn prediction for user after login"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            url = f"{RECO_ENGINE_BASE_URL}/predict/{user_id}"
+            response = await client.post(url)
+            
+            if response.status_code == 200:
+                prediction_data = response.json()
+                logger.info(f"Churn prediction completed for user {user_id}: risk_segment={prediction_data.get('risk_segment', 'unknown')}")
+                
+                # Log nudges if any were triggered
+                if prediction_data.get('nudges_triggered'):
+                    nudge_count = len(prediction_data['nudges_triggered'])
+                    logger.info(f"Triggered {nudge_count} nudges for user {user_id}")
+                    
+                    # Check if discount coupon was created
+                    has_discount = any(nudge.get('type') == 'Discount Coupon' for nudge in prediction_data['nudges_triggered'])
+                    if has_discount:
+                        logger.info(f"Discount coupon created for high-risk user {user_id}")
+                
+                return prediction_data
+            else:
+                logger.warning(f"Churn prediction failed for user {user_id}: {response.status_code} - {response.text}")
+                return None
+                
+    except httpx.TimeoutException:
+        logger.warning(f"Churn prediction timeout for user {user_id}")
+        return None
+    except Exception as e:
+        logger.warning(f"Churn prediction error for user {user_id}: {e}")
+        return None
 
 @auth_router.post("/register", response_model=UserResponse)
 async def register_user(user_data: UserCreate):
@@ -103,11 +142,31 @@ async def login_user(login_data: UserLogin):
         
         logger.info(f"User logged in: {login_data.email}")
         
-        return {
+        # Trigger churn prediction and get result
+        user_id = user_record["user_id"]
+        churn_prediction = await trigger_churn_prediction(user_id)
+        
+        # Prepare response
+        response_data = {
             "access_token": access_token,
             "token_type": "bearer",
             "user": UserResponse(**{k: v for k, v in user_record.items() if k != "hashed_password"})
         }
+        
+        # Add churn prediction info if available and nudges were triggered
+        if churn_prediction and churn_prediction.get('nudges_triggered'):
+            has_discount_coupon = any(
+                nudge.get('type') == 'Discount Coupon' 
+                for nudge in churn_prediction['nudges_triggered']
+            )
+            if has_discount_coupon:
+                response_data["special_offer"] = {
+                    "message": "Special offer just for you! Check your coupons for exclusive discounts.",
+                    "type": "discount_coupon",
+                    "risk_segment": churn_prediction.get('risk_segment', 'unknown')
+                }
+        
+        return response_data
         
     except HTTPException:
         raise

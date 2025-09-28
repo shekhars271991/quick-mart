@@ -46,6 +46,21 @@ export const useAuthStore = create<AuthState>()(
                     })
 
                     toast.success(`Welcome back, ${getUserDisplayName(response.user)}!`)
+
+                    // Check if backend provided a special offer notification
+                    if (response.special_offer) {
+                        const specialOffer = response.special_offer
+                        if (specialOffer.type === 'discount_coupon') {
+                            setTimeout(() => {
+                                toast.success(`🎉 ${specialOffer.message}`, {
+                                    duration: 6000,
+                                })
+                            }, 1500) // Delay to show after welcome message
+                        }
+                    }
+
+                    // Note: Churn prediction is now handled automatically by the backend during login
+
                     return true
                 } catch (error: unknown) {
                     set({ isLoading: false })

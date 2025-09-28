@@ -245,7 +245,26 @@ show_logs() {
 
 # Function to run services locally for development
 run_local() {
-    print_header "${ROCKET} Running Services Locally for Development"
+    local service=$1
+    
+    if [ -z "$service" ]; then
+        # Run all services locally
+        run_all_local
+    elif [ "$service" = "backend" ] || [ "$service" = "quickmart" ]; then
+        run_backend_local
+    elif [ "$service" = "reco" ] || [ "$service" = "recoengine" ]; then
+        run_reco_local
+    else
+        print_status "${CROSS} Unknown service: $service" $RED
+        print_status "Available services: backend, reco" $YELLOW
+        print_status "Usage: ./run.sh local [backend|reco]" $YELLOW
+        return 1
+    fi
+}
+
+# Function to run all services locally
+run_all_local() {
+    print_header "${ROCKET} Running All Services Locally for Development"
     
     # Check if Python virtual environments exist, create if not
     setup_local_env
@@ -277,6 +296,80 @@ run_local() {
     
     # Wait for interrupt
     trap 'kill $QUICKMART_PID $RECO_PID 2>/dev/null; exit' INT
+    wait
+}
+
+# Function to run only QuickMart Backend locally
+run_backend_local() {
+    print_header "${CART} Running QuickMart Backend Locally"
+    
+    # Setup environment
+    setup_local_env
+    
+    # Start infrastructure and RecoEngine in Docker
+    print_status "${GEAR} Starting infrastructure services..." $YELLOW
+    start_infrastructure
+    
+    print_status "${GEAR} Starting RecoEngine in Docker..." $YELLOW
+    cd RecoEngine-featurestore && docker-compose up -d && cd ..
+    
+    # Wait for RecoEngine to be ready
+    wait_for_service "RecoEngine (Docker)" "8000"
+    
+    # Start QuickMart Backend locally
+    print_status "${GEAR} Starting QuickMart Backend locally on port 3011..." $YELLOW
+    start_quickmart_local &
+    QUICKMART_PID=$!
+    
+    # Wait a bit for service to start
+    sleep 3
+    
+    print_status "${CHECK} QuickMart Backend running locally!" $GREEN
+    print_status "QuickMart Backend: http://localhost:3011 (PID: $QUICKMART_PID)" $CYAN
+    print_status "RecoEngine API: http://localhost:8000 (Docker)" $CYAN
+    print_status "Aerospike: localhost:3000 (Docker)" $CYAN
+    print_status "" $NC
+    print_status "Press Ctrl+C to stop local backend" $YELLOW
+    
+    # Wait for interrupt
+    trap 'kill $QUICKMART_PID 2>/dev/null; exit' INT
+    wait
+}
+
+# Function to run only RecoEngine locally
+run_reco_local() {
+    print_header "${BRAIN} Running RecoEngine Locally"
+    
+    # Setup environment
+    setup_local_env
+    
+    # Start infrastructure and QuickMart Backend in Docker
+    print_status "${GEAR} Starting infrastructure services..." $YELLOW
+    start_infrastructure
+    
+    print_status "${GEAR} Starting QuickMart Backend in Docker..." $YELLOW
+    cd QuickMart-backend && docker-compose up -d && cd ..
+    
+    # Wait for QuickMart Backend to be ready
+    wait_for_service "QuickMart Backend (Docker)" "3010"
+    
+    # Start RecoEngine locally
+    print_status "${GEAR} Starting RecoEngine locally on port 8001..." $YELLOW
+    start_recoengine_local &
+    RECO_PID=$!
+    
+    # Wait a bit for service to start
+    sleep 3
+    
+    print_status "${CHECK} RecoEngine running locally!" $GREEN
+    print_status "RecoEngine API: http://localhost:8001 (PID: $RECO_PID)" $CYAN
+    print_status "QuickMart Backend: http://localhost:3010 (Docker)" $CYAN
+    print_status "Aerospike: localhost:3000 (Docker)" $CYAN
+    print_status "" $NC
+    print_status "Press Ctrl+C to stop local RecoEngine" $YELLOW
+    
+    # Wait for interrupt
+    trap 'kill $RECO_PID 2>/dev/null; exit' INT
     wait
 }
 
@@ -353,19 +446,72 @@ stop_local() {
 status_local() {
     print_header "${GEAR} Local Development Services Status"
     
-    print_status "${CYAN}Local Services:${NC}" $NC
-    check_service "QuickMart Backend (Local)" 3011
-    check_service "RecoEngine (Local)" 8001
+    print_status "${CYAN}Checking all possible local configurations...${NC}" $NC
+    print_status "" $NC
     
-    print_status "${CYAN}Infrastructure (Docker):${NC}" $NC
+    # Check local services
+    print_status "${CYAN}Local Services:${NC}" $NC
+    local quickmart_local_running=false
+    local reco_local_running=false
+    
+    if check_service "QuickMart Backend (Local)" 3011 2>/dev/null; then
+        quickmart_local_running=true
+    fi
+    
+    if check_service "RecoEngine (Local)" 8001 2>/dev/null; then
+        reco_local_running=true
+    fi
+    
+    # Check Docker services
+    print_status "${CYAN}Docker Services:${NC}" $NC
+    local quickmart_docker_running=false
+    local reco_docker_running=false
+    
+    if check_service "QuickMart Backend (Docker)" 3010 2>/dev/null; then
+        quickmart_docker_running=true
+    fi
+    
+    if check_service "RecoEngine (Docker)" 8000 2>/dev/null; then
+        reco_docker_running=true
+    fi
+    
     check_service "Aerospike" 3000
     
+    # Determine configuration
     print_status "" $NC
-    print_status "${CYAN}Quick Access URLs (Local):${NC}" $NC
-    print_status "${BLUE}QuickMart Backend API:${NC} http://localhost:3011/docs" $NC
-    print_status "${BLUE}RecoEngine API:${NC} http://localhost:8001/docs" $NC
-    print_status "${BLUE}QuickMart Health:${NC} http://localhost:3011/health" $NC
-    print_status "${BLUE}RecoEngine Health:${NC} http://localhost:8001/health" $NC
+    print_status "${CYAN}Current Configuration:${NC}" $NC
+    
+    if [ "$quickmart_local_running" = true ] && [ "$reco_local_running" = true ]; then
+        print_status "${GREEN}✅ All services running locally${NC}" $NC
+        print_status "Mode: Full Local Development" $CYAN
+    elif [ "$quickmart_local_running" = true ] && [ "$reco_docker_running" = true ]; then
+        print_status "${GREEN}✅ Backend local, RecoEngine in Docker${NC}" $NC
+        print_status "Mode: Backend Local Development" $CYAN
+    elif [ "$reco_local_running" = true ] && [ "$quickmart_docker_running" = true ]; then
+        print_status "${GREEN}✅ RecoEngine local, Backend in Docker${NC}" $NC
+        print_status "Mode: RecoEngine Local Development" $CYAN
+    elif [ "$quickmart_docker_running" = true ] && [ "$reco_docker_running" = true ]; then
+        print_status "${BLUE}ℹ️  All services running in Docker${NC}" $NC
+        print_status "Mode: Full Docker Development" $CYAN
+    else
+        print_status "${YELLOW}⚠️  Mixed or incomplete configuration${NC}" $NC
+        print_status "Mode: Unknown/Partial" $CYAN
+    fi
+    
+    print_status "" $NC
+    print_status "${CYAN}Quick Access URLs:${NC}" $NC
+    
+    if [ "$quickmart_local_running" = true ]; then
+        print_status "${BLUE}QuickMart Backend (Local):${NC} http://localhost:3011/docs" $NC
+    elif [ "$quickmart_docker_running" = true ]; then
+        print_status "${BLUE}QuickMart Backend (Docker):${NC} http://localhost:3010/docs" $NC
+    fi
+    
+    if [ "$reco_local_running" = true ]; then
+        print_status "${BLUE}RecoEngine (Local):${NC} http://localhost:8001/docs" $NC
+    elif [ "$reco_docker_running" = true ]; then
+        print_status "${BLUE}RecoEngine (Docker):${NC} http://localhost:8000/docs" $NC
+    fi
 }
 
 # Function to rebuild all services
@@ -439,7 +585,9 @@ show_help() {
     echo -e "  ${GREEN}logs [service]${NC}  Show logs (service: aerospike, reco, quickmart, or all)"
     echo ""
     echo -e "${YELLOW}Local Development (Fast):${NC}"
-    echo -e "  ${GREEN}local${NC}           Run backend services locally (QuickMart:3011, RecoEngine:8001)"
+    echo -e "  ${GREEN}local${NC}           Run all backend services locally (QuickMart:3011, RecoEngine:8001)"
+    echo -e "  ${GREEN}local backend${NC}   Run only QuickMart Backend locally (RecoEngine in Docker)"
+    echo -e "  ${GREEN}local reco${NC}      Run only RecoEngine locally (QuickMart Backend in Docker)"
     echo -e "  ${GREEN}local-status${NC}    Show status of local development services"
     echo -e "  ${GREEN}local-stop${NC}      Stop local development services"
     echo ""
@@ -451,7 +599,9 @@ show_help() {
     echo -e "${YELLOW}Examples:${NC}"
     echo -e "  ${BLUE}./run.sh fresh${NC}        # Rebuild and start all services (recommended)"
     echo -e "  ${BLUE}./run.sh start${NC}        # Start all services"
-    echo -e "  ${BLUE}./run.sh local${NC}        # Run locally for fast development"
+    echo -e "  ${BLUE}./run.sh local${NC}        # Run all services locally for fast development"
+    echo -e "  ${BLUE}./run.sh local backend${NC} # Run only backend locally (RecoEngine in Docker)"
+    echo -e "  ${BLUE}./run.sh local reco${NC}    # Run only RecoEngine locally (Backend in Docker)"
     echo -e "  ${BLUE}./run.sh rebuild${NC}      # Rebuild all containers"
     echo -e "  ${BLUE}./run.sh status${NC}       # Check service health"
     echo -e "  ${BLUE}./run.sh local-status${NC} # Check local development services"
@@ -487,7 +637,7 @@ case "${1:-help}" in
         restart_backend
         ;;
     "local"|"dev"|"local-dev")
-        run_local
+        run_local $2
         ;;
     "local-status"|"dev-status")
         status_local

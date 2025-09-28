@@ -1,6 +1,5 @@
 """
 Churn Prediction Model Module
-Extracted from model-service for easier debugging
 """
 import xgboost as xgb
 import pandas as pd

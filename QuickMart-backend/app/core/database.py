@@ -185,6 +185,15 @@ class DatabaseManager:
         """Check if a set is empty"""
         count = await self.count_records(set_name)
         return count == 0
+    
+    async def store_coupon(self, coupon) -> bool:
+        """Store a coupon in the database"""
+        try:
+            coupon_data = coupon.dict() if hasattr(coupon, 'dict') else coupon.__dict__
+            return await self.put("coupons", coupon.code, coupon_data)
+        except Exception as e:
+            logger.error(f"Failed to store coupon {coupon.code}: {e}")
+            return False
 
 # Global database manager instance
 database_manager = DatabaseManager()

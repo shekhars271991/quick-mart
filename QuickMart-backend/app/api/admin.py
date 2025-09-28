@@ -630,3 +630,52 @@ async def get_data_status():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to check data status"
         )
+
+@admin_router.post("/coupons")
+async def create_coupon(coupon_data: dict):
+    """Create a new coupon (used by RecoEngine for churn prevention)"""
+    try:
+        # Import here to avoid circular imports
+        from models.coupon import Coupon
+        
+        # Create coupon instance
+        coupon = Coupon(
+            code=coupon_data["code"],
+            name=coupon_data["name"],
+            description=coupon_data.get("description", ""),
+            discount_type=coupon_data["discount_type"],
+            discount_value=coupon_data["discount_value"],
+            minimum_order_value=coupon_data.get("minimum_order_value", 0.0),
+            usage_limit=coupon_data.get("usage_limit", 1),
+            user_specific=coupon_data.get("user_specific", False),
+            applicable_user_ids=coupon_data.get("applicable_user_ids", []),
+            valid_from=coupon_data.get("valid_from"),
+            valid_until=coupon_data.get("valid_until"),
+            is_active=coupon_data.get("is_active", True),
+            created_by_system=coupon_data.get("created_by_system", "admin")
+        )
+        
+        # Store in database
+        await database_manager.store_coupon(coupon)
+        
+        logger.info(f"Created coupon {coupon.code} via admin API")
+        
+        return {
+            "message": "Coupon created successfully",
+            "coupon": {
+                "code": coupon.code,
+                "name": coupon.name,
+                "discount_type": coupon.discount_type,
+                "discount_value": coupon.discount_value,
+                "valid_until": coupon.valid_until,
+                "user_specific": coupon.user_specific,
+                "applicable_user_ids": coupon.applicable_user_ids
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating coupon: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create coupon: {str(e)}"
+        )

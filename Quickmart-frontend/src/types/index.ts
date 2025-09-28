@@ -53,6 +53,11 @@ export interface AuthResponse {
     access_token: string
     token_type: string
     user: User
+    special_offer?: {
+        message: string
+        type: 'discount_coupon' | 'other'
+        risk_segment: string
+    }
 }
 
 // Product Types

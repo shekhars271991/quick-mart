@@ -268,7 +268,7 @@ async def predict_churn(user_id: str) -> ChurnPredictionResponse:
         nudge_response = None
         if prediction_data["risk_segment"] in ["high", "critical"]:
             try:
-                nudge_response = nudge_engine.trigger_nudges(
+                nudge_response = await nudge_engine.trigger_nudges(
                     user_id=user_id,
                     churn_probability=prediction_data["churn_probability"],
                     risk_segment=prediction_data["risk_segment"],

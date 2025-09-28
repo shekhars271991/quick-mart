@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useCouponNotifications } from '../../hooks/useCouponNotifications'
 import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
 import { getUserDisplayName } from '../../utils/userUtils'
@@ -19,6 +20,7 @@ export default function Header() {
     const navigate = useNavigate()
     const { user, isAuthenticated, logout } = useAuthStore()
     const { items } = useCartStore()
+    const { hasNewPersonalizedCoupons, personalizedCouponsCount, markCouponsAsViewed } = useCouponNotifications()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -82,9 +84,18 @@ export default function Header() {
                             </Link>
                             <Link
                                 to="/coupons"
-                                className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+                                onClick={markCouponsAsViewed}
+                                className="relative text-gray-700 hover:text-primary-600 font-medium transition-colors"
                             >
                                 Coupons
+                                {hasNewPersonalizedCoupons && (
+                                    <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-2 h-2 animate-pulse"></span>
+                                )}
+                                {personalizedCouponsCount > 0 && (
+                                    <span className="ml-1 bg-purple-100 text-purple-800 text-xs font-medium px-1.5 py-0.5 rounded-full">
+                                        {personalizedCouponsCount}
+                                    </span>
+                                )}
                             </Link>
                         </nav>
                     )}
@@ -140,11 +151,26 @@ export default function Header() {
                                         </Link>
                                         <Link
                                             to="/coupons"
-                                            onClick={() => setIsUserMenuOpen(false)}
-                                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            onClick={() => {
+                                                setIsUserMenuOpen(false)
+                                                markCouponsAsViewed()
+                                            }}
+                                            className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                         >
-                                            <Gift className="w-4 h-4" />
-                                            <span>Coupons</span>
+                                            <div className="flex items-center space-x-2">
+                                                <Gift className="w-4 h-4" />
+                                                <span>Coupons</span>
+                                            </div>
+                                            <div className="flex items-center space-x-1">
+                                                {personalizedCouponsCount > 0 && (
+                                                    <span className="bg-purple-100 text-purple-800 text-xs font-medium px-1.5 py-0.5 rounded-full">
+                                                        {personalizedCouponsCount}
+                                                    </span>
+                                                )}
+                                                {hasNewPersonalizedCoupons && (
+                                                    <span className="bg-purple-500 text-white text-xs rounded-full w-2 h-2 animate-pulse"></span>
+                                                )}
+                                            </div>
                                         </Link>
                                         <hr className="my-1" />
                                         <button
@@ -199,10 +225,23 @@ export default function Header() {
                             </Link>
                             <Link
                                 to="/coupons"
-                                onClick={() => setIsMenuOpen(false)}
-                                className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+                                onClick={() => {
+                                    setIsMenuOpen(false)
+                                    markCouponsAsViewed()
+                                }}
+                                className="flex items-center justify-between text-gray-700 hover:text-primary-600 font-medium transition-colors"
                             >
-                                Coupons
+                                <span>Coupons</span>
+                                <div className="flex items-center space-x-1">
+                                    {personalizedCouponsCount > 0 && (
+                                        <span className="bg-purple-100 text-purple-800 text-xs font-medium px-1.5 py-0.5 rounded-full">
+                                            {personalizedCouponsCount}
+                                        </span>
+                                    )}
+                                    {hasNewPersonalizedCoupons && (
+                                        <span className="bg-purple-500 text-white text-xs rounded-full w-2 h-2 animate-pulse"></span>
+                                    )}
+                                </div>
                             </Link>
                         </div>
                     </div>

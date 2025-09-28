@@ -235,6 +235,15 @@ export const adminApi = {
     },
 }
 
+// RecoEngine API for churn prediction
+export const recoEngineApi = {
+    predictChurn: async (userId: string): Promise<any> => {
+        const recoEngineUrl = (import.meta.env.VITE_RECO_ENGINE_URL as string) || 'http://localhost:8100'
+        const response = await axios.post(`${recoEngineUrl}/predict/${userId}`)
+        return response.data
+    },
+}
+
 // Health check
 export const healthApi = {
     check: async (): Promise<Record<string, unknown>> => {
