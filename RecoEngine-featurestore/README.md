@@ -27,13 +27,16 @@ docker-compose up -d
 curl http://localhost:8000/health
 ```
 
-### 2. Train Model (Generates 5000 synthetic users)
+### 2. Generate Training Data and Train Model
 ```bash
-# Standalone mode
-docker-compose --profile training up training-service
+# Generate synthetic training data (via API)
+curl -X POST "http://localhost:8000/train/generate-data?samples=5000&clear_existing=true"
 
-# Integrated mode (uses shared infrastructure)
-docker-compose --profile training up training-service
+# Train the model
+curl -X POST "http://localhost:8000/train/model"
+
+# Check training status
+curl http://localhost:8000/train/status
 ```
 
 ### 3. Test Prediction

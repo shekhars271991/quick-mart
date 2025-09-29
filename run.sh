@@ -123,12 +123,25 @@ start_quickmart() {
 train_model() {
     print_header "${BRAIN} Training RecoEngine Model"
     
-    cd RecoEngine-featurestore
-    print_status "${GEAR} Starting model training (this may take a few minutes)..." $YELLOW
-    docker-compose --profile training up training-service
-    cd ..
+    print_status "${GEAR} Generating synthetic training data..." $YELLOW
+    if curl -s -X POST "http://localhost:8000/train/generate-data?samples=5000&clear_existing=true" > /dev/null; then
+        print_status "${CHECK} Training data generated successfully!" $GREEN
+    else
+        print_status "${CROSS} Failed to generate training data" $RED
+        return 1
+    fi
     
-    print_status "${CHECK} Model training completed!" $GREEN
+    print_status "${GEAR} Training model (this may take a few minutes)..." $YELLOW
+    if curl -s -X POST "http://localhost:8000/train/model" > /dev/null; then
+        print_status "${CHECK} Model training completed!" $GREEN
+    else
+        print_status "${CROSS} Model training failed" $RED
+        return 1
+    fi
+    
+    # Show training status
+    print_status "${INFO} Checking training status..." $BLUE
+    curl -s "http://localhost:8000/train/status" | jq '.' 2>/dev/null || echo "Training status not available"
 }
 
 # Function to run tests

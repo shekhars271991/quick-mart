@@ -18,26 +18,6 @@ services:
       - quickmart_aerospike:aerospike
     restart: unless-stopped
 
-  training-service:
-    build: ./training-service
-    container_name: reco_training_service
-    volumes:
-      - ./data:/app/data
-      - ./models:/app/models
-    environment:
-      - NUM_USERS=5000
-      - NATIONALITY=en_US
-      - AEROSPIKE_HOST=quickmart_aerospike
-      - AEROSPIKE_PORT=3000
-      - AEROSPIKE_NAMESPACE=churn_features
-      - MODEL_OUTPUT_PATH=/app/models/churn_model.joblib
-      - CHURN_RATE=0.25
-    networks:
-      - quickmart_shared_network
-    external_links:
-      - quickmart_aerospike:aerospike
-    profiles:
-      - training
 
 networks:
   quickmart_shared_network:

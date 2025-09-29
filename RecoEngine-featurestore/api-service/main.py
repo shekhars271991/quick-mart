@@ -395,9 +395,9 @@ async def generate_training_data(
     try:
         logger.info(f"Generating {samples} training samples...")
         
-        # Import the training data generator from local training_service module
+        # Import the training data generator from local module
         try:
-            from training_service import TrainingDataGenerator
+            from training_data_generator import TrainingDataGenerator
         except ImportError as e:
             logger.error(f"Failed to import TrainingDataGenerator: {e}")
             raise HTTPException(
@@ -419,11 +419,6 @@ async def generate_training_data(
             )
         
         try:
-            # Clear existing data if requested
-            if clear_existing:
-                logger.info("Clearing existing training data...")
-                generator.clear_training_data()
-            
             # Generate synthetic training data
             logger.info(f"Generating {samples} synthetic training samples...")
             training_data = generator.generate_synthetic_features(
@@ -431,25 +426,26 @@ async def generate_training_data(
                 random_seed=random_seed
             )
             
-            # Insert into Aerospike
-            success = generator.insert_training_data(training_data)
+            # Store in Aerospike (this will handle clear_existing internally)
+            stored_count = generator.store_training_data(training_data, clear_existing)
             
-            if not success:
+            if stored_count == 0:
                 raise HTTPException(
                     status_code=500,
-                    detail="Failed to insert training data into Aerospike"
+                    detail="Failed to store training data into Aerospike"
                 )
             
-            # Get final statistics
-            stats = generator.get_data_stats()
+            # Get final count
+            total_count = generator.get_training_data_count()
             
             return {
                 "message": "Training data generated successfully",
                 "samples_generated": len(training_data),
+                "samples_stored": stored_count,
+                "total_training_samples": total_count,
                 "samples_requested": samples,
                 "random_seed": random_seed,
                 "cleared_existing": clear_existing,
-                "final_stats": stats,
                 "timestamp": datetime.utcnow().isoformat()
             }
             
