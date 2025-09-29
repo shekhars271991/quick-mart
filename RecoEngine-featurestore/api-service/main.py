@@ -395,15 +395,9 @@ async def generate_training_data(
     try:
         logger.info(f"Generating {samples} training samples...")
         
-        # Import the training data generator
-        import sys
-        import os
-        training_service_path = os.path.join(os.path.dirname(__file__), '..', 'training-service')
-        if training_service_path not in sys.path:
-            sys.path.append(training_service_path)
-        
+        # Import the training data generator from local training_service module
         try:
-            from generate_training_data import TrainingDataGenerator
+            from training_service import TrainingDataGenerator
         except ImportError as e:
             logger.error(f"Failed to import TrainingDataGenerator: {e}")
             raise HTTPException(
