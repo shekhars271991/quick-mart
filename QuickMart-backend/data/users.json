@@ -281,49 +281,49 @@
             "profile": {
                 "acc_age_days": 400,
                 "member_dur": 13,
-                "loyalty_enc": 3,
+                "loyalty_enc": 1,
                 "geo_loc_enc": 1,
                 "device_type_enc": 1,
                 "pref_pay_enc": 3,
                 "lang_pref_enc": 1
             },
             "behavior": {
-                "days_last_login": 15,
-                "days_last_purch": 60,
-                "sess_7d": 2,
-                "sess_30d": 5,
-                "avg_sess_dur": 6.5,
-                "ctr_10_sess": 0.25,
-                "cart_abandon": 0.50,
-                "wishlist_ratio": 0.10,
-                "content_engage": 0.30
+                "days_last_login": 25,
+                "days_last_purch": 90,
+                "sess_7d": 0,
+                "sess_30d": 1,
+                "avg_sess_dur": 3.2,
+                "ctr_10_sess": 0.15,
+                "cart_abandon": 0.80,
+                "wishlist_ratio": 0.05,
+                "content_engage": 0.15
             },
             "transactional": {
-                "avg_order_val": 110.40,
-                "orders_6m": 8,
-                "purch_freq_90d": 2,
-                "last_hv_purch": 90,
-                "refund_rate": 0.04,
-                "sub_pay_enc": 2,
-                "discount_dep": 0.60
+                "avg_order_val": 45.20,
+                "orders_6m": 1,
+                "purch_freq_90d": 0.5,
+                "last_hv_purch": 120,
+                "refund_rate": 0.35,
+                "sub_pay_enc": 3,
+                "discount_dep": 0.85
             },
             "engagement": {
-                "push_open_rate": 0.20,
-                "email_ctr": 0.35,
-                "inapp_ctr": 0.30,
-                "promo_resp_time": 7.5,
-                "retention_enc": 2
+                "push_open_rate": 0.10,
+                "email_ctr": 0.15,
+                "inapp_ctr": 0.12,
+                "promo_resp_time": 48.0,
+                "retention_enc": 3
             },
             "support": {
-                "tickets_90d": 1,
-                "avg_ticket_res": 48.0,
-                "csat_score": 3.0,
-                "refund_req": 1
+                "tickets_90d": 4,
+                "avg_ticket_res": 72.0,
+                "csat_score": 2.0,
+                "refund_req": 3
             },
             "realtime": {
                 "curr_sess_clk": 3,
                 "checkout_time": 12.8,
-                "cart_no_buy": 1,
+                "cart_no_buy": 0,
                 "bounce_flag": 1
             }
         },
