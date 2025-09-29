@@ -323,7 +323,7 @@
             "realtime": {
                 "curr_sess_clk": 3,
                 "checkout_time": 12.8,
-                "cart_no_buy": 2,
+                "cart_no_buy": 1,
                 "bounce_flag": 1
             }
         },
