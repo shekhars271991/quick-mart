@@ -33,9 +33,17 @@ def test_connection():
     print(f"  Namespace: {AEROSPIKE_NAMESPACE}")
     
     # Build configuration
-    # For Aerospike Cloud, try disabling peer discovery to use only seed node
+    # Try using IP address directly instead of hostname (some clients have issues with hostnames in TLS)
+    import socket
+    try:
+        resolved_ip = socket.gethostbyname(AEROSPIKE_HOST)
+        print(f"   Using resolved IP: {resolved_ip}")
+        host_to_use = resolved_ip  # Try IP first
+    except:
+        host_to_use = AEROSPIKE_HOST
+    
     config = {
-        'hosts': [(AEROSPIKE_HOST, AEROSPIKE_PORT)],
+        'hosts': [(host_to_use, AEROSPIKE_PORT)],
         'policies': {
             'write': {'key': aerospike.POLICY_KEY_SEND},
             'timeout': 30000,  # 30 second timeout
@@ -62,9 +70,15 @@ def test_connection():
             print(f"\n❌ CA file not found: {AEROSPIKE_TLS_CAFILE}")
             return False
         
+        # Always use TLS name (SNI) even when connecting via IP
+        # This is critical for Aerospike Cloud TLS validation
         if AEROSPIKE_TLS_NAME:
             tls_config['name'] = AEROSPIKE_TLS_NAME
             print(f"✅ Using SNI: {AEROSPIKE_TLS_NAME}")
+        elif AEROSPIKE_HOST:
+            # Fallback to hostname for SNI if TLS_NAME not explicitly set
+            tls_config['name'] = AEROSPIKE_HOST
+            print(f"✅ Using hostname as SNI: {AEROSPIKE_HOST}")
         
         if tls_config:
             config['tls'] = tls_config
