@@ -23,7 +23,10 @@ class DatabaseManager:
             config = {
                 'hosts': [(settings.AEROSPIKE_HOST, settings.AEROSPIKE_PORT)],
                 'policies': {
-                    'write': {'key': aerospike.POLICY_KEY_SEND}
+                    'write': {'key': aerospike.POLICY_KEY_SEND},
+                    'timeout': 10000,  # 10 second timeout
+                    'max_retries': 2,
+                    'sleep_between_retries': 100  # 100ms between retries
                 }
             }
             
