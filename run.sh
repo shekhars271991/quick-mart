@@ -17,6 +17,17 @@ msg() {
     echo -e "${2}${1}${NC}"
 }
 
+# Helper: Ensure shared network exists
+ensure_network() {
+    if ! docker network inspect quickmart_shared_network >/dev/null 2>&1; then
+        msg "Creating shared network..." $YELLOW
+        docker network create --driver bridge quickmart_shared_network || {
+            msg "Failed to create network" $RED
+            return 1
+        }
+    fi
+}
+
 # Helper: Run docker compose in directory
 docker_compose() {
     local dir=$1
@@ -51,9 +62,8 @@ wait_for() {
 start_all() {
     msg "\n🚀 Starting QuickMart Platform\n" $BLUE
     
-    msg "Creating shared network..." $YELLOW
-    docker compose up -d
-    sleep 2
+    ensure_network
+    sleep 1
     
     msg "Starting RecoEngine..." $YELLOW
     docker_compose "RecoEngine-featurestore" up -d
@@ -74,7 +84,6 @@ stop_all() {
     
     docker_compose "QuickMart-backend" down
     docker_compose "RecoEngine-featurestore" down
-    docker compose down
     
     msg "✓ All services stopped\n" $GREEN
 }
@@ -85,8 +94,7 @@ rebuild_and_start() {
     
     stop_all
     
-    msg "Ensuring shared network exists..." $YELLOW
-    docker compose up -d
+    ensure_network
     
     msg "Rebuilding RecoEngine..." $YELLOW
     docker_compose "RecoEngine-featurestore" build --no-cache
@@ -174,9 +182,8 @@ run_local() {
     fi
     
     # Ensure shared network exists
-    msg "Ensuring shared network exists..." $YELLOW
-    docker compose up -d
-    sleep 2
+    ensure_network
+    sleep 1
     
     # Start services locally
     msg "\nStarting services locally...\n" $YELLOW
