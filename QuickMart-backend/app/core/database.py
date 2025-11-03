@@ -59,8 +59,19 @@ class DatabaseManager:
                 logger.warning("No authentication credentials provided")
             
             logger.info(f"Attempting connection with config: hosts={config['hosts']}")
+            logger.info(f"Full config: {str(config).replace(settings.AEROSPIKE_PASSWORD, '***') if settings.AEROSPIKE_PASSWORD else str(config)}")
             self.client = aerospike.client(config)
-            self.client.connect()
+            # Use connect() with explicit timeout handling
+            try:
+                self.client.connect()
+            except Exception as conn_err:
+                logger.error(f"Connection error details: {type(conn_err).__name__}: {str(conn_err)}")
+                # Try to get more details if available
+                if hasattr(conn_err, 'code'):
+                    logger.error(f"Error code: {conn_err.code}")
+                if hasattr(conn_err, 'msg'):
+                    logger.error(f"Error message: {conn_err.msg}")
+                raise
             
             logger.info(f"Connected to Aerospike at {settings.AEROSPIKE_HOST}:{settings.AEROSPIKE_PORT}")
             if settings.AEROSPIKE_USE_TLS:

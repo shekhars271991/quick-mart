@@ -24,7 +24,8 @@ COPY data/ ./data/
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash quickmart
 RUN chown -R quickmart:quickmart /app
-USER quickmart
+# Keep root user for volume access (CA file mounted at runtime)
+# USER quickmart
 
 # Expose port
 EXPOSE 3001
