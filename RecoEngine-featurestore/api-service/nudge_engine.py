@@ -5,6 +5,7 @@ from datetime import datetime
 import httpx
 import asyncio
 import os
+from config import settings
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -231,7 +232,7 @@ class NudgeEngine:
         """Assign a discount coupon to user via QuickMart API based on churn reasons"""
         try:
             # Use single URL from environment variable
-            quickmart_url = os.getenv("QUICKMART_API_URL", "http://localhost:3010")
+            quickmart_url = settings.QUICKMART_API_URL
             
             # Select coupon based on churn reasons and probability
             # Duplicate prevention is handled at the backend level

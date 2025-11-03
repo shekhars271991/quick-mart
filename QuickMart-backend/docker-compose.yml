@@ -10,7 +10,7 @@ services:
     environment:
       - AEROSPIKE_HOST=quickmart_aerospike
       - AEROSPIKE_PORT=3000
-      - AEROSPIKE_NAMESPACE=quick_mart
+      - AEROSPIKE_NAMESPACE=churnprediction
       - RECO_ENGINE_URL=http://reco_api_service:8000
       - JWT_SECRET=quickmart-jwt-secret-change-in-production
       - DEBUG=true

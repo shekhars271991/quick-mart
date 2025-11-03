@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # Database
     AEROSPIKE_HOST: str = "localhost"
     AEROSPIKE_PORT: int = 3000
-    AEROSPIKE_NAMESPACE: str = "quick_mart"
+    AEROSPIKE_NAMESPACE: str = "churnprediction"
     
     # Authentication
     JWT_SECRET: str = "your-secret-key-change-in-production"
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     INIT_DATA_ON_STARTUP: bool = True
     
     class Config:
-        env_file = ".env"
+        env_file = [".env", "env.config"]
         case_sensitive = True
 
 # Create settings instance

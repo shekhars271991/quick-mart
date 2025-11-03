@@ -464,7 +464,7 @@ class DataInitializer:
 # Database
 AEROSPIKE_HOST=localhost
 AEROSPIKE_PORT=3000
-AEROSPIKE_NAMESPACE=quickmart_app
+AEROSPIKE_NAMESPACE=churnprediction
 
 # RecoEngine Integration
 RECO_ENGINE_URL=http://localhost:8000

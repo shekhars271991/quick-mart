@@ -3,7 +3,7 @@
 Synthetic Training Data Generator for Churn Prediction
 
 This module generates synthetic training data and inserts it into Aerospike
-in the 'churn_features' namespace under the 'training_data' set.
+in the 'churnprediction' namespace under the 'training_data' set.
 """
 
 import aerospike
@@ -15,6 +15,7 @@ import logging
 from feature_config import (
     FEATURE_COLUMNS, CATEGORICAL_MAPPINGS, CATEGORICAL_INDICES, SYNTHETIC_DATA_PARAMS
 )
+from config import settings
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ class TrainingDataGenerator:
         self.aerospike_host = aerospike_host
         self.aerospike_port = aerospike_port
         self.client = None
-        self.namespace = "churn_features"
+        self.namespace = settings.AEROSPIKE_NAMESPACE
         self.set_name = "training_data"
         
     def connect_aerospike(self):

@@ -17,6 +17,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, classification_report, confusion_matrix
 import json
 from feature_config import FEATURE_COLUMNS, MODEL_PARAMS
+from config import settings
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 class ModelTrainer:
     def __init__(self, aerospike_client):
         self.client = aerospike_client
-        self.namespace = "churn_features"
+        self.namespace = settings.AEROSPIKE_NAMESPACE
         self.set_name = "training_data"
         self.feature_columns = FEATURE_COLUMNS
         self.model = None

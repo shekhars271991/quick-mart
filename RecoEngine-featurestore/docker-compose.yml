@@ -11,7 +11,7 @@ services:
     environment:
       - AEROSPIKE_HOST=quickmart_aerospike
       - AEROSPIKE_PORT=3000
-      - AEROSPIKE_NAMESPACE=churn_features
+      - AEROSPIKE_NAMESPACE=churnprediction
       - QUICKMART_API_URL=http://quickmart_backend_api:3001
     networks:
       - quickmart_shared_network

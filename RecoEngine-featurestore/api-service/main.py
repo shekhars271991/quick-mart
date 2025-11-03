@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from model_predictor import churn_predictor, get_model_health
 from nudge_engine import nudge_engine, get_nudge_health, NudgeResponse
 from training_service import ModelTrainer, get_training_status
+from config import settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,9 +28,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Churn Prediction API", version="1.0.0", lifespan=lifespan)
 
-# Environment variables
-AEROSPIKE_HOST = os.getenv("AEROSPIKE_HOST", "aerospike")
-AEROSPIKE_PORT = int(os.getenv("AEROSPIKE_PORT", "3000"))
+# Configuration from settings
+AEROSPIKE_HOST = settings.AEROSPIKE_HOST
+AEROSPIKE_PORT = settings.AEROSPIKE_PORT
+AEROSPIKE_NAMESPACE = settings.AEROSPIKE_NAMESPACE
 MODEL_SERVICE_URL = os.getenv("MODEL_SERVICE_URL", "http://localhost:8001")
 # NUDGE_SERVICE_URL = os.getenv("NUDGE_SERVICE_URL", "http://localhost:8002")  # No longer needed - integrated
 
@@ -145,7 +147,7 @@ def store_features_in_aerospike(user_id: str, features: Dict[str, Any], feature_
             raise HTTPException(status_code=503, detail="Aerospike not available")
     
     try:
-        namespace = "churn_features"
+        namespace = AEROSPIKE_NAMESPACE
         set_name = "user_features"
         key_name = user_id + "_" + feature_type
         key = (namespace, set_name, key_name)
@@ -177,7 +179,7 @@ def retrieve_all_features(user_id: str) -> Dict[str, Any]:
     
     for feature_type in feature_types:
         try:
-            namespace = "churn_features"
+            namespace = AEROSPIKE_NAMESPACE
             set_name = "user_features"
             key_name = user_id + "_" + feature_type
             key = (namespace, set_name, key_name)

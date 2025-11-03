@@ -82,7 +82,7 @@ For faster development with instant code changes:
 ### Shared Infrastructure (Base docker-compose)
 | Service | Port | Description |
 |---------|------|-------------|
-| Aerospike | 3000-3003 | Shared database (namespaces: `churn_features`, `quick_mart`) |
+| Aerospike | 3000-3003 | Unified database (namespace: `churnprediction`) |
 
 ### Microservices (Individual docker-compose files)
 | Service | Port | Location | Description |
@@ -93,15 +93,14 @@ For faster development with instant code changes:
 ## 🗃️ Database Namespaces
 
 ### Aerospike Configuration
-- **`churn_features`**: RecoEngine feature store (user behavior, predictions)
-- **`quick_mart`**: QuickMart application data (users, products, orders, coupons)
+- **`churnprediction`**: Unified namespace containing all data (user features, training data, application data)
 
 ## 🔄 Integration Flow
 
 ```
 User Login → QuickMart Backend → RecoEngine Predict API
                     ↓
-RecoEngine Nudge Response → Create User Coupon → Store in quick_mart namespace
+RecoEngine Nudge Response → Create User Coupon → Store in churnprediction namespace
                     ↓
 User Shopping → GET /api/coupons/user → Display Personalized Coupons
 ```
@@ -160,8 +159,7 @@ docker exec -it quickmart_aerospike_tools bash
 asinfo -h aerospike -p 3000 -v "namespaces"
 
 # Check namespace statistics
-asinfo -h aerospike -p 3000 -v "namespace/churn_features"
-asinfo -h aerospike -p 3000 -v "namespace/quick_mart"
+asinfo -h aerospike -p 3000 -v "namespace/churnprediction"
 ```
 
 ### Logs and Debugging
@@ -177,12 +175,12 @@ docker-compose logs -f reco-api
 
 ## 📊 Data Models
 
-### RecoEngine (churn_features namespace)
+### RecoEngine (churnprediction namespace)
 - User behavior features (profile, transactional, engagement)
 - Churn predictions and scores
 - Nudge generation results
 
-### QuickMart (quick_mart namespace)
+### QuickMart (churnprediction namespace)
 - User profiles and authentication
 - Product catalog and categories
 - Shopping carts and orders
@@ -199,12 +197,12 @@ AEROSPIKE_PORT=3000
 
 ### RecoEngine Specific
 ```bash
-AEROSPIKE_NAMESPACE=churn_features
+AEROSPIKE_NAMESPACE=churnprediction
 ```
 
 ### QuickMart Backend Specific
 ```bash
-AEROSPIKE_NAMESPACE=quick_mart
+AEROSPIKE_NAMESPACE=churnprediction
 RECO_ENGINE_URL=http://reco-api:8000
 JWT_SECRET=your_jwt_secret_here
 NODE_ENV=development
