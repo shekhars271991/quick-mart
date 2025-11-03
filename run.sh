@@ -17,14 +17,14 @@ msg() {
     echo -e "${2}${1}${NC}"
 }
 
-# Helper: Run docker-compose in directory
+# Helper: Run docker compose in directory
 docker_compose() {
     local dir=$1
     shift
     if [ "$dir" = "." ]; then
-        docker-compose "$@"
+        docker compose "$@"
     else
-        (cd "$dir" && docker-compose "$@")
+        (cd "$dir" && docker compose "$@")
     fi
 }
 
@@ -52,7 +52,7 @@ start_all() {
     msg "\n🚀 Starting QuickMart Platform\n" $BLUE
     
     msg "Creating shared network..." $YELLOW
-    docker-compose up -d
+    docker compose up -d
     sleep 2
     
     msg "Starting RecoEngine..." $YELLOW
@@ -74,7 +74,7 @@ stop_all() {
     
     docker_compose "QuickMart-backend" down
     docker_compose "RecoEngine-featurestore" down
-    docker-compose down
+    docker compose down
     
     msg "✓ All services stopped\n" $GREEN
 }
@@ -86,7 +86,7 @@ rebuild_and_start() {
     stop_all
     
     msg "Ensuring shared network exists..." $YELLOW
-    docker-compose up -d
+    docker compose up -d
     
     msg "Rebuilding RecoEngine..." $YELLOW
     docker_compose "RecoEngine-featurestore" build --no-cache
@@ -175,7 +175,7 @@ run_local() {
     
     # Ensure shared network exists
     msg "Ensuring shared network exists..." $YELLOW
-    docker-compose up -d
+    docker compose up -d
     sleep 2
     
     # Start services locally
