@@ -44,11 +44,15 @@ class Settings(BaseSettings):
     class Config:
         env_file = [".env", "env.config"]
         case_sensitive = True
+        # Environment variables take precedence over files
+        env_file_encoding = 'utf-8'
 
-# Create settings instance
+# Create settings instance - pydantic automatically reads from env vars and files
+# Environment variables take precedence over env files
 settings = Settings()
 
-# Override with environment variables if running in Docker
+# Explicitly override with environment variables if set (for Docker/container environments)
+# This ensures environment variables always win over file-based config
 if os.getenv("AEROSPIKE_HOST"):
     settings.AEROSPIKE_HOST = os.getenv("AEROSPIKE_HOST")
 if os.getenv("AEROSPIKE_PORT"):
@@ -58,7 +62,11 @@ if os.getenv("AEROSPIKE_NAMESPACE"):
 if os.getenv("AEROSPIKE_USE_TLS"):
     settings.AEROSPIKE_USE_TLS = os.getenv("AEROSPIKE_USE_TLS").lower() in ("true", "1", "yes")
 if os.getenv("AEROSPIKE_TLS_CAFILE"):
+    # Always use environment variable if set (important for Docker containers)
     settings.AEROSPIKE_TLS_CAFILE = os.getenv("AEROSPIKE_TLS_CAFILE")
+elif not settings.AEROSPIKE_TLS_CAFILE:
+    # Default to container path if not set
+    settings.AEROSPIKE_TLS_CAFILE = "/app/ascloud.ca"
 if os.getenv("AEROSPIKE_TLS_NAME"):
     settings.AEROSPIKE_TLS_NAME = os.getenv("AEROSPIKE_TLS_NAME")
 if os.getenv("AEROSPIKE_USERNAME"):
