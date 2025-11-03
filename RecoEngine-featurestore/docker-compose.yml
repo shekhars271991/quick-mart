@@ -11,12 +11,15 @@ services:
     volumes:
       # Mount TLS CA certificate for Aerospike Cloud
       - ../../ascloud.ca:/app/ascloud.ca:ro
+    env_file:
+      - .env
     environment:
       - AEROSPIKE_HOST=${AEROSPIKE_HOST:-quickmart_aerospike}
       - AEROSPIKE_PORT=${AEROSPIKE_PORT:-3000}
       - AEROSPIKE_NAMESPACE=${AEROSPIKE_NAMESPACE:-churnprediction}
       - AEROSPIKE_USE_TLS=${AEROSPIKE_USE_TLS:-false}
-      - AEROSPIKE_TLS_CAFILE=${AEROSPIKE_TLS_CAFILE:-}
+      # CA file is mounted at /app/ascloud.ca inside container
+      - AEROSPIKE_TLS_CAFILE=${AEROSPIKE_TLS_CAFILE:-/app/ascloud.ca}
       - AEROSPIKE_TLS_NAME=${AEROSPIKE_TLS_NAME:-}
       - AEROSPIKE_USERNAME=${AEROSPIKE_USERNAME:-}
       - AEROSPIKE_PASSWORD=${AEROSPIKE_PASSWORD:-}

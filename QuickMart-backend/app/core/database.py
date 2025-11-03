@@ -27,13 +27,19 @@ class DatabaseManager:
                 }
             }
             
+            logger.info(f"Connecting to Aerospike: {settings.AEROSPIKE_HOST}:{settings.AEROSPIKE_PORT}")
+            logger.info(f"TLS enabled: {settings.AEROSPIKE_USE_TLS}")
+            
             # Add TLS configuration if enabled (only CA file required for Aerospike Cloud)
             if settings.AEROSPIKE_USE_TLS:
                 tls_config = {}
                 if settings.AEROSPIKE_TLS_CAFILE:
+                    import os
                     tls_config['cafile'] = settings.AEROSPIKE_TLS_CAFILE
+                    logger.info(f"TLS CA file: {settings.AEROSPIKE_TLS_CAFILE} (exists: {os.path.exists(settings.AEROSPIKE_TLS_CAFILE)})")
                 if settings.AEROSPIKE_TLS_NAME:
                     tls_config['name'] = settings.AEROSPIKE_TLS_NAME
+                    logger.info(f"TLS name (SNI): {settings.AEROSPIKE_TLS_NAME}")
                 if tls_config:
                     config['tls'] = tls_config
                 else:
@@ -45,7 +51,11 @@ class DatabaseManager:
                     'username': settings.AEROSPIKE_USERNAME,
                     'password': settings.AEROSPIKE_PASSWORD
                 }
+                logger.info(f"Using authentication: {settings.AEROSPIKE_USERNAME}")
+            else:
+                logger.warning("No authentication credentials provided")
             
+            logger.info(f"Attempting connection with config: hosts={config['hosts']}")
             self.client = aerospike.client(config)
             self.client.connect()
             
