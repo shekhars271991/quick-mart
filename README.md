@@ -265,4 +265,12 @@ curl -X POST "http://localhost:3010/api/auth/login" \
 
 ---
 
+
+Testing in local
+
+1. Create SSH tunnel
+
+ssh -i /Users/ssuman/aerolab-keys/aerolab-Perseus_test-skr-new_ap-south-1 -L 4000:ea16c08d-aa99-4b7c-bc41-2467b24b8e58.aerospike.internal:4000 -N -f ubuntu@ec2-3-110-195-38.ap-south-1.compute.amazonaws.com
+
 *This setup provides a production-ready foundation for an AI-powered e-commerce platform with intelligent customer retention capabilities.*
+

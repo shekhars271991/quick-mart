@@ -27,10 +27,31 @@ class DatabaseManager:
                 }
             }
             
+            # Add TLS configuration if enabled (only CA file required for Aerospike Cloud)
+            if settings.AEROSPIKE_USE_TLS:
+                tls_config = {}
+                if settings.AEROSPIKE_TLS_CAFILE:
+                    tls_config['cafile'] = settings.AEROSPIKE_TLS_CAFILE
+                if settings.AEROSPIKE_TLS_NAME:
+                    tls_config['name'] = settings.AEROSPIKE_TLS_NAME
+                if tls_config:
+                    config['tls'] = tls_config
+                else:
+                    logger.warning("TLS enabled but AEROSPIKE_TLS_CAFILE not provided")
+            
+            # Add authentication if credentials provided
+            if settings.AEROSPIKE_USERNAME and settings.AEROSPIKE_PASSWORD:
+                config['auth'] = {
+                    'username': settings.AEROSPIKE_USERNAME,
+                    'password': settings.AEROSPIKE_PASSWORD
+                }
+            
             self.client = aerospike.client(config)
             self.client.connect()
             
             logger.info(f"Connected to Aerospike at {settings.AEROSPIKE_HOST}:{settings.AEROSPIKE_PORT}")
+            if settings.AEROSPIKE_USE_TLS:
+                logger.info("Using TLS connection")
             logger.info(f"Using namespace: {self.namespace}")
             
         except Exception as e:

@@ -51,9 +51,9 @@ wait_for() {
 start_all() {
     msg "\n🚀 Starting QuickMart Platform\n" $BLUE
     
-    msg "Starting infrastructure..." $YELLOW
+    msg "Creating shared network..." $YELLOW
     docker-compose up -d
-    sleep 3
+    sleep 2
     
     msg "Starting RecoEngine..." $YELLOW
     docker_compose "RecoEngine-featurestore" up -d
@@ -64,6 +64,7 @@ start_all() {
     wait_for "QuickMart Backend" 3010
     
     msg "\n✓ All services started\n" $GREEN
+    msg "Note: Using Aerospike Cloud (configure via AEROSPIKE_HOST/PORT/TLS_* env vars)\n" $CYAN
     show_status
 }
 
@@ -84,8 +85,8 @@ rebuild_and_start() {
     
     stop_all
     
-    msg "Rebuilding infrastructure..." $YELLOW
-    docker-compose build --no-cache
+    msg "Ensuring shared network exists..." $YELLOW
+    docker-compose up -d
     
     msg "Rebuilding RecoEngine..." $YELLOW
     docker_compose "RecoEngine-featurestore" build --no-cache
@@ -148,12 +149,8 @@ show_logs() {
         backend)
             docker_compose "QuickMart-backend" logs -f
             ;;
-        infra)
-            docker-compose logs -f aerospike
-            ;;
         *)
             msg "Showing all logs (Ctrl+C to exit)..." $YELLOW
-            docker-compose logs -f &
             docker_compose "RecoEngine-featurestore" logs -f &
             docker_compose "QuickMart-backend" logs -f &
             wait
@@ -176,10 +173,10 @@ run_local() {
         (cd RecoEngine-featurestore/api-service && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt -q)
     fi
     
-    # Start infrastructure in Docker
-    msg "Starting infrastructure..." $YELLOW
+    # Ensure shared network exists
+    msg "Ensuring shared network exists..." $YELLOW
     docker-compose up -d
-    sleep 3
+    sleep 2
     
     # Start services locally
     msg "\nStarting services locally...\n" $YELLOW
@@ -213,7 +210,7 @@ show_help() {
     echo -e "  ${GREEN}stop${NC}         Stop all services"
     echo -e "  ${GREEN}fresh${NC}        Rebuild and start"
     echo -e "  ${GREEN}status${NC}       Show service status"
-    echo -e "  ${GREEN}logs [service]${NC}  Show logs (reco, backend, infra, or all)"
+    echo -e "  ${GREEN}logs [service]${NC}  Show logs (reco, backend, or all)"
     echo -e "  ${GREEN}local${NC}        Run services locally (fast dev)"
     echo -e "  ${GREEN}train${NC}        Train ML model"
     echo ""

@@ -50,6 +50,8 @@ aerospike_logs/
 .env
 .env.local
 .env.production
+# Environment config files (may contain sensitive data)
+**/env.config
 
 # === Logs ===
 *.log

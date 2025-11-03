@@ -1,52 +1,7 @@
 # QuickMart Shared Infrastructure Services
-# This docker-compose provides shared services used by multiple microservices
-
-services:
-  # Shared Aerospike Database
-  aerospike:
-    image: aerospike/aerospike-server:latest
-    container_name: quickmart_aerospike
-    ports:
-      - "3000:3000"  # Service port
-      - "3001:3001"  # Fabric port
-      - "3002:3002"  # Heartbeat port
-      - "3003:3003"  # Info port
-    volumes:
-      - aerospike_data:/opt/aerospike/data
-      - aerospike_logs:/var/log/aerospike
-      - ./aerospike.conf:/opt/aerospike/etc/aerospike-custom.conf
-    entrypoint: ["asd", "--foreground", "--config-file", "/opt/aerospike/etc/aerospike-custom.conf"]
-    healthcheck:
-      test: ["CMD", "asinfo", "-h", "localhost", "-p", "3000", "-v", "build"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-    networks:
-      - quickmart_shared_network
-
-  # Aerospike Tools for database management
-  aerospike-tools:
-    image: aerospike/aerospike-tools:latest
-    container_name: quickmart_aerospike_tools
-    depends_on:
-      aerospike:
-        condition: service_healthy
-    environment:
-      - AEROSPIKE_HOST=aerospike
-      - AEROSPIKE_PORT=3000
-    entrypoint: ["tail", "-f", "/dev/null"]
-    networks:
-      - quickmart_shared_network
-    restart: unless-stopped
-
-volumes:
-  aerospike_data:
-    driver: local
-  aerospike_logs:
-    driver: local
-
+# This docker-compose provides shared network for microservices
+# Note: Aerospike is now using Aerospike Cloud (managed service)
+# Configure via environment variables: AEROSPIKE_HOST, AEROSPIKE_PORT, AEROSPIKE_TLS_*
 
 networks:
   quickmart_shared_network:

@@ -8,15 +8,21 @@ services:
     container_name: reco_api_service
     ports:
       - "8000:8000"
+    volumes:
+      # Mount TLS CA certificate for Aerospike Cloud
+      - ../../ascloud.ca:/app/ascloud.ca:ro
     environment:
-      - AEROSPIKE_HOST=quickmart_aerospike
-      - AEROSPIKE_PORT=3000
-      - AEROSPIKE_NAMESPACE=churnprediction
+      - AEROSPIKE_HOST=${AEROSPIKE_HOST:-quickmart_aerospike}
+      - AEROSPIKE_PORT=${AEROSPIKE_PORT:-3000}
+      - AEROSPIKE_NAMESPACE=${AEROSPIKE_NAMESPACE:-churnprediction}
+      - AEROSPIKE_USE_TLS=${AEROSPIKE_USE_TLS:-false}
+      - AEROSPIKE_TLS_CAFILE=${AEROSPIKE_TLS_CAFILE:-}
+      - AEROSPIKE_TLS_NAME=${AEROSPIKE_TLS_NAME:-}
+      - AEROSPIKE_USERNAME=${AEROSPIKE_USERNAME:-}
+      - AEROSPIKE_PASSWORD=${AEROSPIKE_PASSWORD:-}
       - QUICKMART_API_URL=http://quickmart_backend_api:3001
     networks:
       - quickmart_shared_network
-    external_links:
-      - quickmart_aerospike:aerospike
     restart: unless-stopped
 
 

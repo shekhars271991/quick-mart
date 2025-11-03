@@ -36,8 +36,30 @@ class TrainingDataGenerator:
                         'write': {'key': aerospike.POLICY_KEY_SEND}
                     }
          }
+        
+        # Add TLS configuration if enabled (only CA file required for Aerospike Cloud)
+        if settings.AEROSPIKE_USE_TLS:
+            tls_config = {}
+            if settings.AEROSPIKE_TLS_CAFILE:
+                tls_config['cafile'] = settings.AEROSPIKE_TLS_CAFILE
+            if settings.AEROSPIKE_TLS_NAME:
+                tls_config['name'] = settings.AEROSPIKE_TLS_NAME
+            if tls_config:
+                config['tls'] = tls_config
+            else:
+                logger.warning("TLS enabled but AEROSPIKE_TLS_CAFILE not provided")
+        
+        # Add authentication if credentials provided
+        if settings.AEROSPIKE_USERNAME and settings.AEROSPIKE_PASSWORD:
+            config['auth'] = {
+                'username': settings.AEROSPIKE_USERNAME,
+                'password': settings.AEROSPIKE_PASSWORD
+            }
+        
         try:
             logger.info(f"Connecting to Aerospike at {self.aerospike_host}:{self.aerospike_port}")
+            if settings.AEROSPIKE_USE_TLS:
+                logger.info("Using TLS connection")
             self.client = aerospike.client(config).connect()
             logger.info("Connected to Aerospike successfully")
             return True

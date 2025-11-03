@@ -8,9 +8,14 @@ services:
     ports:
       - "3010:3001"
     environment:
-      - AEROSPIKE_HOST=quickmart_aerospike
-      - AEROSPIKE_PORT=3000
-      - AEROSPIKE_NAMESPACE=churnprediction
+      - AEROSPIKE_HOST=${AEROSPIKE_HOST:-quickmart_aerospike}
+      - AEROSPIKE_PORT=${AEROSPIKE_PORT:-3000}
+      - AEROSPIKE_NAMESPACE=${AEROSPIKE_NAMESPACE:-churnprediction}
+      - AEROSPIKE_USE_TLS=${AEROSPIKE_USE_TLS:-false}
+      - AEROSPIKE_TLS_CAFILE=${AEROSPIKE_TLS_CAFILE:-}
+      - AEROSPIKE_TLS_NAME=${AEROSPIKE_TLS_NAME:-}
+      - AEROSPIKE_USERNAME=${AEROSPIKE_USERNAME:-}
+      - AEROSPIKE_PASSWORD=${AEROSPIKE_PASSWORD:-}
       - RECO_ENGINE_URL=http://reco_api_service:8000
       - JWT_SECRET=quickmart-jwt-secret-change-in-production
       - DEBUG=true
@@ -18,6 +23,8 @@ services:
       # Mount source code for development (changes reflect immediately)
       - ./app:/app/app
       - ./data:/app/data
+      # Mount TLS CA certificate for Aerospike Cloud
+      - ../ascloud.ca:/app/ascloud.ca:ro
     networks:
       - quickmart_shared_network
     restart: unless-stopped
