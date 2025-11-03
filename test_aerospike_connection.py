@@ -33,6 +33,7 @@ def test_connection():
     print(f"  Namespace: {AEROSPIKE_NAMESPACE}")
     
     # Build configuration
+    # For Aerospike Cloud, try disabling peer discovery to use only seed node
     config = {
         'hosts': [(AEROSPIKE_HOST, AEROSPIKE_PORT)],
         'policies': {
@@ -42,6 +43,14 @@ def test_connection():
             'sleep_between_retries': 1000  # 1 second between retries
         }
     }
+    
+    # Try to disable peer discovery - this might help with Aerospike Cloud
+    # Some versions support this parameter to avoid cluster discovery issues
+    try:
+        # Use direct connection without cluster discovery
+        config['use_services_alternate'] = False
+    except:
+        pass
     
     # Add TLS configuration
     if AEROSPIKE_USE_TLS:
