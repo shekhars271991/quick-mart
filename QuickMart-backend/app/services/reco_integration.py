@@ -106,6 +106,75 @@ class RecoEngineService:
             logger.error(f"Error ingesting transaction data: {e}")
             return False
     
+    async def ingest_realtime_features(self, user_id: str, realtime_data: Dict[str, Any]) -> bool:
+        """Ingest real-time session features to RecoEngine"""
+        try:
+            # Add user_id to the realtime data
+            realtime_data["user_id"] = user_id
+            
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    f"{self.base_url}/ingest/realtime",
+                    json=realtime_data
+                )
+                
+                if response.status_code == 200:
+                    logger.info(f"Real-time features ingested for user {user_id}")
+                    return True
+                else:
+                    logger.warning(f"Real-time feature ingestion failed for user {user_id}: {response.status_code}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error ingesting real-time features: {e}")
+            return False
+    
+    async def ingest_engagement_features(self, user_id: str, engagement_data: Dict[str, Any]) -> bool:
+        """Ingest engagement features to RecoEngine"""
+        try:
+            # Add user_id to the engagement data
+            engagement_data["user_id"] = user_id
+            
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    f"{self.base_url}/ingest/engagement",
+                    json=engagement_data
+                )
+                
+                if response.status_code == 200:
+                    logger.info(f"Engagement features ingested for user {user_id}")
+                    return True
+                else:
+                    logger.warning(f"Engagement feature ingestion failed for user {user_id}: {response.status_code}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error ingesting engagement features: {e}")
+            return False
+    
+    async def ingest_support_features(self, user_id: str, support_data: Dict[str, Any]) -> bool:
+        """Ingest support features to RecoEngine"""
+        try:
+            # Add user_id to the support data
+            support_data["user_id"] = user_id
+            
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    f"{self.base_url}/ingest/support",
+                    json=support_data
+                )
+                
+                if response.status_code == 200:
+                    logger.info(f"Support features ingested for user {user_id}")
+                    return True
+                else:
+                    logger.warning(f"Support feature ingestion failed for user {user_id}: {response.status_code}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error ingesting support features: {e}")
+            return False
+    
     async def health_check(self) -> bool:
         """Check if RecoEngine is healthy"""
         try:

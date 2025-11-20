@@ -14,7 +14,9 @@ export default defineConfig({
         port: 3000,
         proxy: {
             '/api': {
-                target: 'http://localhost:3010',
+                // Default to 3011 for local development (./run.sh local), 3010 for Docker
+                // Can override with VITE_API_URL environment variable
+                target: process.env.VITE_API_URL || 'http://localhost:3011',
                 changeOrigin: true,
             },
         },

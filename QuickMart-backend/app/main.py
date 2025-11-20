@@ -20,6 +20,7 @@ from api.products import products_router
 from api.coupons import coupons_router
 from api.users import users_router
 from api.admin import admin_router
+from api.cart import cart_router
 
 # Configure logging
 logging.basicConfig(
@@ -74,6 +75,7 @@ app.include_router(products_router, prefix="/api/products", tags=["Products"])
 app.include_router(coupons_router, prefix="/api/coupons", tags=["Coupons"])
 app.include_router(users_router, prefix="/api/users", tags=["Users"])
 app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
+app.include_router(cart_router, prefix="/api/cart", tags=["Cart"])
 
 @app.get("/")
 async def root():

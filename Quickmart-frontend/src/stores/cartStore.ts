@@ -2,6 +2,7 @@ import toast from 'react-hot-toast'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Cart, CartItem, Coupon, Product } from '../types'
+import { cartApi } from '../lib/api'
 
 interface CartState extends Cart {
     // Actions
@@ -74,6 +75,12 @@ export const useCartStore = create<CartState>()(
 
                 get().calculateTotals()
                 toast.success(`${product.name} added to cart`)
+                
+                // Call backend API to update user features for churn prediction (fire and forget)
+                cartApi.addToCart(product.product_id, quantity).catch((error) => {
+                    // Silently fail - cart still works on frontend even if backend call fails
+                    console.warn('Failed to update features for churn prediction:', error)
+                })
             },
 
             removeItem: (productId: string) => {

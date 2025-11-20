@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = [".env", "env.config"]
         case_sensitive = True
+        extra = "ignore"  # Ignore extra environment variables
 
 # Create settings instance
 settings = Settings()

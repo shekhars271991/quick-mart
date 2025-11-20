@@ -579,22 +579,28 @@ async def load_users():
             user_data_with_password["hashed_password"] = hashed_password
             
             # Store in Aerospike
-            success = await database_manager.put("users", user_id, user_data_with_password)
-            if success:
-                # Upload features to RecoEngine if they exist
-                if "features" in user_data:
-                    feature_upload_success = await upload_user_features_to_reco_engine(user_id, user_data["features"])
-                    if not feature_upload_success:
-                        logger.warning(f"Failed to upload features for user {user_id}")
-                
-                loaded_users.append({
-                    "user_id": user_id,
-                    "email": user_data["email"],
-                    "password": password  # Include demo password in response
-                })
-                logger.info(f"Loaded user: {user_id}")
-            else:
-                logger.error(f"Failed to load user: {user_id}")
+            try:
+                success = await database_manager.put("users", user_id, user_data_with_password)
+                if success:
+                    # Upload features to RecoEngine if they exist (don't block on this)
+                    if "features" in user_data:
+                        try:
+                            feature_upload_success = await upload_user_features_to_reco_engine(user_id, user_data["features"])
+                            if not feature_upload_success:
+                                logger.warning(f"Failed to upload features for user {user_id}")
+                        except Exception as e:
+                            logger.warning(f"Exception uploading features for user {user_id}: {e}")
+                    
+                    loaded_users.append({
+                        "user_id": user_id,
+                        "email": user_data["email"],
+                        "password": password  # Include demo password in response
+                    })
+                    logger.info(f"✅ Loaded user: {user_id} ({user_data['email']})")
+                else:
+                    logger.error(f"❌ Failed to store user {user_id} in database")
+            except Exception as e:
+                logger.error(f"❌ Exception while storing user {user_id}: {e}", exc_info=True)
         
         return {
             "message": "Users loaded successfully",

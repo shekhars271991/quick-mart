@@ -138,7 +138,7 @@ class MonitoringMetrics(BaseModel):
 
 # Helper functions
 def store_features_in_aerospike(user_id: str, features: Dict[str, Any], feature_type: str):
-    """Store features in Aerospike with proper key structure"""
+    """Store features in Aerospike with proper key structure - merges with existing features"""
     global client
     
     # Try to reconnect if client is None
@@ -151,13 +151,31 @@ def store_features_in_aerospike(user_id: str, features: Dict[str, Any], feature_
         set_name = "user_features"
         key_name = user_id + "_" + feature_type
         key = (namespace, set_name, key_name)
+        
+        # Retrieve existing features to merge with new ones
+        existing_features = {}
+        try:
+            (key, metadata, bins) = client.get(key)
+            if bins:
+                # Extract existing features (excluding metadata)
+                existing_features = {k: v for k, v in bins.items() if k not in ["timestamp", "feature_type"]}
+                logger.info(f"Found existing {feature_type} features for user {user_id}, merging with new features")
+        except aerospike.exception.RecordNotFound:
+            logger.info(f"No existing {feature_type} features for user {user_id}, creating new record")
+        except Exception as e:
+            logger.warning(f"Error retrieving existing features for user {user_id}: {e}")
+        
+        # Merge existing features with new features (new features override existing ones)
+        merged_features = {**existing_features, **features}
+        
         features_with_timestamp = {
-            **features,
+            **merged_features,
             "timestamp": datetime.utcnow().isoformat(),
             "feature_type": feature_type
         }
+        
         client.put(key, features_with_timestamp)
-        logger.info(f"Stored {feature_type} features for user {user_id}")
+        logger.info(f"Stored {feature_type} features for user {user_id} (merged {len(existing_features)} existing + {len(features)} new = {len(merged_features)} total)")
     except Exception as e:
         logger.error(f"Error storing features for user {user_id}: {str(e)}")
         # Try to reconnect on error
@@ -263,8 +281,24 @@ async def predict_churn(user_id: str) -> ChurnPredictionResponse:
         if not features:
             raise HTTPException(status_code=404, detail=f"No features found for user {user_id}")
         
+        # Log key features for debugging
+        logger.info(f"Predicting churn for user {user_id}")
+        logger.info(f"Key features - cart_abandon: {features.get('cart_abandon')}, "
+                   f"sess_7d: {features.get('sess_7d')}, "
+                   f"days_last_purch: {features.get('days_last_purch')}, "
+                   f"days_last_login: {features.get('days_last_login')}, "
+                   f"cart_no_buy: {features.get('cart_no_buy')}, "
+                   f"orders_6m: {features.get('orders_6m')}, "
+                   f"csat_score: {features.get('csat_score')}, "
+                   f"push_open_rate: {features.get('push_open_rate')}, "
+                   f"loyalty_enc: {features.get('loyalty_enc')}")
+        
         # Call local model for prediction
         prediction_data = churn_predictor.predict_churn(features)
+        
+        logger.info(f"Prediction result - probability: {prediction_data['churn_probability']:.3f}, "
+                   f"risk_segment: {prediction_data['risk_segment']}")
+        logger.info(f"Top churn reasons: {prediction_data.get('churn_reasons', [])[:3]}")
         
         # Trigger nudges using integrated nudge engine
         nudge_response = None

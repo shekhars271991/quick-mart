@@ -109,21 +109,37 @@ async def login_user(login_data: UserLogin):
     try:
         # Find user by email
         users = await database_manager.scan_set("users")
+        logger.info(f"Found {len(users)} users in database")
         user_record = None
         
         for user in users:
+            # Ensure user_id is set (might be stored as _key from scan)
+            if not user.get("user_id") and user.get("_key"):
+                user["user_id"] = user["_key"]
+            
             if user.get("email") == login_data.email:
                 user_record = user
+                logger.info(f"Found user: {user_record.get('user_id')} - {user_record.get('email')}")
                 break
         
         if not user_record:
+            logger.warning(f"Login attempt with email not found: {login_data.email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password"
             )
         
         # Verify password
-        if not auth_manager.verify_password(login_data.password, user_record["hashed_password"]):
+        if "hashed_password" not in user_record:
+            logger.error(f"User {user_record.get('user_id')} has no hashed_password field")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
+        password_valid = auth_manager.verify_password(login_data.password, user_record["hashed_password"])
+        if not password_valid:
+            logger.warning(f"Invalid password for user: {login_data.email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password"

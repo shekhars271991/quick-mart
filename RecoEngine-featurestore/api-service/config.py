@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     AEROSPIKE_NAMESPACE: str = "churnprediction"
     
     # QuickMart Integration
-    QUICKMART_API_URL: str = "http://localhost:3010"
+    QUICKMART_API_URL: str = "http://localhost:3011"  # 3011 for local dev, 3010 for Docker
     
     # Application Settings
     DEBUG: bool = True
@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = [".env", "env.config"]
         case_sensitive = True
+        extra = "ignore"  # Ignore extra environment variables
 
 # Create settings instance
 settings = Settings()

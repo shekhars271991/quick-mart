@@ -19,8 +19,9 @@ import type {
 } from '../types'
 
 // Create axios instance with base configuration
+// Default to 3011 for local development (./run.sh local), 3010 for Docker
 const api = axios.create({
-    baseURL: (import.meta.env.VITE_API_URL as string) || 'http://localhost:3010',
+    baseURL: (import.meta.env.VITE_API_URL as string) || 'http://localhost:3011',
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
@@ -224,6 +225,16 @@ export const usersApi = {
     },
 }
 
+export const cartApi = {
+    addToCart: async (productId: string, quantity: number = 1): Promise<ApiResponse> => {
+        const response = await api.post('/api/cart/add', {
+            product_id: productId,
+            quantity,
+        })
+        return response.data
+    },
+}
+
 export const adminApi = {
     initializeData: async (): Promise<ApiResponse> => {
         const response = await api.post('/api/admin/initialize-data')
@@ -239,7 +250,8 @@ export const adminApi = {
 // RecoEngine API for churn prediction
 export const recoEngineApi = {
     predictChurn: async (userId: string): Promise<any> => {
-        const recoEngineUrl = (import.meta.env.VITE_RECO_ENGINE_URL as string) || 'http://localhost:8100'
+        // Default to 8001 for local development (./run.sh local), 8000 for Docker
+        const recoEngineUrl = (import.meta.env.VITE_RECO_ENGINE_URL as string) || 'http://localhost:8001'
         const response = await axios.post(`${recoEngineUrl}/predict/${userId}`)
         return response.data
     },
