@@ -126,6 +126,7 @@ class RealTimeSessionFeatures(BaseModel):
     checkout_time: Optional[float] = None
     cart_no_buy: Optional[bool] = None
     bounce_flag: Optional[bool] = None
+    cart_items: Optional[List[Dict[str, Any]]] = None  # Cart items for personalized messages
 
 class ChurnPredictionResponse(BaseModel):
     user_id: str
@@ -370,7 +371,11 @@ async def predict_churn(user_id: str) -> ChurnPredictionResponse:
         
         # Trigger nudges using integrated nudge engine
         nudge_response = None
-        if prediction_data["risk_segment"] in ["high", "critical"]:
+        # Trigger for high/critical risk OR if cart abandonment detected at any risk level
+        has_cart_abandonment = any("cart" in reason.lower() or "abandon" in reason.lower() 
+                                   for reason in prediction_data["churn_reasons"])
+        
+        if prediction_data["risk_segment"] in ["high", "critical"] or has_cart_abandonment:
             try:
                 nudge_response = await nudge_engine.trigger_nudges(
                     user_id=user_id,

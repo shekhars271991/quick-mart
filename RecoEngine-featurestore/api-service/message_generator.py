@@ -228,6 +228,38 @@ Write ONE SMS exactly as it would be sent (max 160 chars):"""
             logger.warning(f"Error fetching user profile from Aerospike for {user_id}: {e}")
             return {}
     
+    def _fetch_cart_items_from_aerospike(self, user_id: str) -> List[Dict[str, Any]]:
+        """Fetch cart items from user's realtime features in Aerospike"""
+        try:
+            if not self.aerospike_client:
+                logger.warning("No Aerospike client available to fetch cart items")
+                return []
+            
+            # Get realtime features which contain cart_items
+            namespace = settings.AEROSPIKE_NAMESPACE
+            key = (namespace, "user_features", f"{user_id}_realtime")
+            
+            logger.info(f"Fetching cart items for {user_id} from realtime features")
+            (key, metadata, bins) = self.aerospike_client.get(key)
+            
+            if bins:
+                # Cart items should be in the realtime features
+                cart_items = bins.get('cart_items', [])
+                
+                if cart_items:
+                    logger.info(f"Found {len(cart_items)} cart items for {user_id}: {[item.get('name', 'unknown') for item in cart_items]}")
+                    return cart_items
+                else:
+                    logger.info(f"No cart items found in realtime features for {user_id}")
+                    return []
+                    
+        except aerospike.exception.RecordNotFound:
+            logger.info(f"No realtime features found for {user_id} (cart may be empty)")
+            return []
+        except Exception as e:
+            logger.warning(f"Error fetching cart items from Aerospike for {user_id}: {e}")
+            return []
+    
     async def generate_message(self, user_id: str, churn_probability: float, 
                               churn_reasons: List[str], user_features: Dict[str, Any]) -> Optional[str]:
         """
@@ -254,6 +286,14 @@ Write ONE SMS exactly as it would be sent (max 160 chars):"""
                 if additional_profile:
                     user_features.update(additional_profile)
                     logger.info(f"Successfully added profile data: name={additional_profile.get('name')}, age={additional_profile.get('age')}")
+            
+            # Check if we have cart items in features, if not try to fetch from realtime features
+            if not user_features.get('cart_items'):
+                logger.info(f"No cart items in features for {user_id}, fetching from realtime features")
+                cart_items = self._fetch_cart_items_from_aerospike(user_id)
+                if cart_items:
+                    user_features['cart_items'] = cart_items
+                    logger.info(f"Successfully added {len(cart_items)} cart items to user features")
             
             # Log what features we received for debugging
             logger.info(f"Features received for {user_id}: name={user_features.get('name')}, age={user_features.get('age')}, " +

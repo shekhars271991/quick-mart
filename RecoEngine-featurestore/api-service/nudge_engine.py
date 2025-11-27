@@ -36,8 +36,17 @@ NUDGE_RULES = [
         "churn_score_range": [0.7, 1.0],
         "churn_reasons": ["Inactive", "No purchase", "High risk factor"],
         "nudges": [
-            {"type": "Discount Coupon", "content_template": "20% Off Welcome Back", "channel": "app", "priority": 1, "discount_percent": 20, "coupon_code": "WELCOME20"},
-            {"type": "Push Notification", "content_template": "We miss you! Get 20% off your next order", "channel": "push", "priority": 2}
+            {"type": "Custom Message", "content_template": "AI-Generated Personalized Message", "channel": "sms", "priority": 1},
+            {"type": "Discount Coupon", "content_template": "20% Off Welcome Back", "channel": "app", "priority": 2, "discount_percent": 20, "coupon_code": "WELCOME20"},
+            {"type": "Push Notification", "content_template": "We miss you! Get 20% off your next order", "channel": "push", "priority": 3}
+        ]
+    },
+    {
+        "rule_id": "medium_risk_cart_abandonment",
+        "churn_score_range": [0.3, 0.6],
+        "churn_reasons": ["cart", "abandon"],  # Will match any reason containing these words
+        "nudges": [
+            {"type": "Custom Message", "content_template": "AI-Generated Cart Reminder", "channel": "sms", "priority": 1}
         ]
     },
     {
@@ -53,8 +62,9 @@ NUDGE_RULES = [
         "churn_score_range": [0.8, 1.0],
         "churn_reasons": ["CART_ABANDONMENT"],
         "nudges": [
-            {"type": "Push Notification", "content_template": "Template 2", "channel": "push", "priority": 1},
-            {"type": "Discount Coupon", "content_template": "Template 2", "channel": "email", "priority": 2}
+            {"type": "Custom Message", "content_template": "AI-Generated Cart Recovery Message", "channel": "sms", "priority": 1},
+            {"type": "Push Notification", "content_template": "Template 2", "channel": "push", "priority": 2},
+            {"type": "Discount Coupon", "content_template": "Template 2", "channel": "email", "priority": 3}
         ]
     },
     {
@@ -103,8 +113,9 @@ NUDGE_RULES = [
         "churn_score_range": [0.6, 0.8],
         "churn_reasons": ["CART_ABANDONMENT", "LOW_ENGAGEMENT"],
         "nudges": [
-            {"type": "Email", "content_template": "Template 8", "channel": "email", "priority": 1},
-            {"type": "Discount Coupon", "content_template": "Template 8", "channel": "email", "priority": 2}
+            {"type": "Custom Message", "content_template": "AI-Generated Cart Abandonment Message", "channel": "sms", "priority": 1},
+            {"type": "Email", "content_template": "Template 8", "channel": "email", "priority": 2},
+            {"type": "Discount Coupon", "content_template": "Template 8", "channel": "email", "priority": 3}
         ]
     },
     {
