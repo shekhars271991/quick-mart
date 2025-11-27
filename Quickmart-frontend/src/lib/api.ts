@@ -257,6 +257,21 @@ export const recoEngineApi = {
     },
 }
 
+// User Messages API
+export const messagesApi = {
+    // Get user messages from nudge system
+    getMessages: async (): Promise<{messages: any[], total_messages: number, unread_count: number}> => {
+        const response = await api.get('/api/users/messages')
+        return response.data
+    },
+
+    // Mark message as read
+    markAsRead: async (messageId: string): Promise<ApiResponse> => {
+        const response = await api.put(`/api/users/messages/${messageId}/mark-read`)
+        return response.data
+    },
+}
+
 // Health check
 export const healthApi = {
     check: async (): Promise<Record<string, unknown>> => {

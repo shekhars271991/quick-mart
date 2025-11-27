@@ -15,6 +15,7 @@ import { useCouponNotifications } from '../../hooks/useCouponNotifications'
 import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
 import { getUserDisplayName } from '../../utils/userUtils'
+import NotificationsDropdown from './NotificationsDropdown'
 
 export default function Header() {
     const navigate = useNavigate()
@@ -102,6 +103,9 @@ export default function Header() {
 
                     {/* Right Side Actions */}
                     <div className="flex items-center space-x-4">
+                        {/* Notifications - Only show for authenticated users */}
+                        {isAuthenticated && <NotificationsDropdown />}
+
                         {/* Cart */}
                         <Link
                             to="/cart"

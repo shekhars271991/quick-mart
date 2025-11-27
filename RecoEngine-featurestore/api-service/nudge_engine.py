@@ -290,16 +290,16 @@ class NudgeEngine:
                                    churn_reasons: List[str], user_features: Optional[Dict[str, Any]] = None) -> bool:
         """Send custom personalized message via the custom message API"""
         try:
-            # Use the same service URL (internal call)
-            # In production, this could be a separate service URL, but for now we'll use localhost
-            # Since we're in the same service, we could also call directly, but using HTTP keeps it decoupled
-            api_url = os.getenv("API_SERVICE_URL", "http://localhost:8000")
+            # Use the RecoEngine's own API (internal call to /messages/custom endpoint)
+            # Build URL using settings to ensure we use the correct host and port
+            api_url = f"http://{settings.API_HOST}:{settings.API_PORT}"
             
             request_data = {
                 "user_id": user_id,
                 "churn_probability": churn_probability,
                 "churn_reasons": churn_reasons,
-                "user_features": user_features
+                "user_features": user_features,
+                "store_in_db": True  # Always store when triggered by nudge engine
             }
             
             logger.info(f"Sending custom message request for user {user_id} via {api_url}/messages/custom")

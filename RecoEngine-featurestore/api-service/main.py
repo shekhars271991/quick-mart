@@ -256,14 +256,16 @@ def store_custom_message_in_aerospike(user_id: str, message_id: str, message: st
             "user_id": user_id,
             "message_id": message_id,
             "message": message,
-            "churn_prob": churn_probability,
+            "churn_prob": churn_probability,  # Shortened to stay under 15 char limit
             "churn_reasons": churn_reasons,
-            "user_ftrs": user_features or {},
+            "user_ftrs": user_features or {},  # Shortened to stay under 15 char limit
             "created_at": datetime.utcnow().isoformat(),
             "status": "generated"
         }
         
-        client.put(key, message_record)
+        # Wrap in 'data' bin to match QuickMart backend's expected format
+        bins = {"data": message_record}
+        client.put(key, bins)
         logger.info(f"Stored custom message {message_id} for user {user_id} in Aerospike")
         
         return True
@@ -809,6 +811,48 @@ async def send_custom_message(request: CustomMessageRequest) -> CustomMessageRes
             status_code=500,
             detail=f"Failed to generate custom message: {str(e)}"
         )
+
+@app.get("/messages/debug/{user_id}")
+async def debug_user_messages(user_id: str):
+    """Debug endpoint to check messages in Aerospike"""
+    global client
+    
+    if client is None:
+        if not connect_aerospike():
+            raise HTTPException(status_code=503, detail="Aerospike not available")
+    
+    try:
+        # Scan custom_user_messages set
+        namespace = AEROSPIKE_NAMESPACE
+        set_name = "custom_user_messages"
+        scan = client.scan(namespace, set_name)
+        
+        messages = []
+        def callback(input_tuple):
+            key, metadata, bins = input_tuple
+            if bins:
+                # Check if data is in 'data' bin or directly in bins
+                if 'data' in bins:
+                    msg_data = bins['data']
+                else:
+                    msg_data = bins
+                
+                if isinstance(msg_data, dict) and msg_data.get("user_id") == user_id:
+                    msg_data['_key'] = key[2] if len(key) > 2 else None
+                    msg_data['_storage_format'] = 'data_bin' if 'data' in bins else 'direct'
+                    messages.append(msg_data)
+        
+        scan.foreach(callback)
+        
+        return {
+            "user_id": user_id,
+            "total_messages": len(messages),
+            "messages": messages
+        }
+        
+    except Exception as e:
+        logger.error(f"Error debugging messages for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to debug messages: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

@@ -158,9 +158,10 @@ async def login_user(login_data: UserLogin):
         
         logger.info(f"User logged in: {login_data.email}")
         
-        # Trigger churn prediction and get result
+        # Trigger churn prediction asynchronously (don't block login response)
         user_id = user_record["user_id"]
-        churn_prediction = await trigger_churn_prediction(user_id)
+        asyncio.create_task(trigger_churn_prediction(user_id))
+        logger.info(f"Triggered async churn prediction for user {user_id}")
         
         # Prepare response
         response_data = {
@@ -168,19 +169,6 @@ async def login_user(login_data: UserLogin):
             "token_type": "bearer",
             "user": UserResponse(**{k: v for k, v in user_record.items() if k != "hashed_password"})
         }
-        
-        # Add churn prediction info if available and nudges were triggered
-        if churn_prediction and churn_prediction.get('nudges_triggered'):
-            has_discount_coupon = any(
-                nudge.get('type') == 'Discount Coupon' 
-                for nudge in churn_prediction['nudges_triggered']
-            )
-            if has_discount_coupon:
-                response_data["special_offer"] = {
-                    "message": "Special offer just for you! Check your coupons for exclusive discounts.",
-                    "type": "discount_coupon",
-                    "risk_segment": churn_prediction.get('risk_segment', 'unknown')
-                }
         
         return response_data
         

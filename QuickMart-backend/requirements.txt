@@ -10,7 +10,7 @@ bcrypt==4.0.1
 python-decouple==3.8
 
 # Database
-aerospike==17.1.0
+aerospike==16.0.1
 
 # HTTP client for RecoEngine integration
 httpx==0.25.2

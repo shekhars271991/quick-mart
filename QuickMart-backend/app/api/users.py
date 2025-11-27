@@ -96,3 +96,82 @@ async def get_purchase_history(current_user: dict = Depends(get_current_user)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch purchase history"
         )
+
+@users_router.get("/messages")
+async def get_user_messages(current_user: dict = Depends(get_current_user)):
+    """Get custom messages for the current user from the nudge system"""
+    try:
+        # Get all custom messages
+        all_messages = await database_manager.scan_set("custom_user_messages")
+        user_messages = []
+        
+        for message_data in all_messages:
+            if message_data.get("user_id") == current_user["user_id"]:
+                # Transform shortened field names to full names for frontend
+                normalized_message = {
+                    "user_id": message_data.get("user_id"),
+                    "message_id": message_data.get("message_id"),
+                    "message": message_data.get("message"),
+                    "churn_probability": message_data.get("churn_prob", 0),  # Transform churn_prob -> churn_probability
+                    "churn_reasons": message_data.get("churn_reasons", []),
+                    "user_features": message_data.get("user_ftrs", {}),  # Transform user_ftrs -> user_features
+                    "created_at": message_data.get("created_at"),
+                    "status": message_data.get("status"),
+                    "read_at": message_data.get("read_at")
+                }
+                user_messages.append(normalized_message)
+        
+        # Sort by creation date (newest first)
+        user_messages.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        
+        logger.info(f"Retrieved {len(user_messages)} messages for user {current_user['user_id']}")
+        
+        return {
+            "messages": user_messages,
+            "total_messages": len(user_messages),
+            "unread_count": sum(1 for msg in user_messages if msg.get("status") == "generated")
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching user messages: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch messages"
+        )
+
+@users_router.put("/messages/{message_id}/mark-read")
+async def mark_message_read(message_id: str, current_user: dict = Depends(get_current_user)):
+    """Mark a message as read"""
+    try:
+        # Get the message
+        key = f"{current_user['user_id']}_{message_id}"
+        message = await database_manager.get("custom_user_messages", key)
+        
+        if not message:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Message not found"
+            )
+        
+        # Update status to read
+        message["status"] = "read"
+        message["read_at"] = database_manager.get_timestamp()
+        
+        success = await database_manager.put("custom_user_messages", key, message)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to mark message as read"
+            )
+        
+        logger.info(f"Marked message {message_id} as read for user {current_user['user_id']}")
+        return {"message": "Message marked as read", "message_id": message_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error marking message as read: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to mark message as read"
+        )
