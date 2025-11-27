@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from model_predictor import churn_predictor, get_model_health
 from nudge_engine import nudge_engine, get_nudge_health, NudgeResponse
 from training_service import ModelTrainer, get_training_status
+from message_generator import message_generator
 from config import settings
 
 # Configure logging
@@ -136,6 +137,23 @@ class MonitoringMetrics(BaseModel):
     model_accuracy: Dict[str, Any]
     nudge_responses: Dict[str, Any]
 
+class CustomMessageRequest(BaseModel):
+    user_id: str
+    churn_probability: float
+    churn_reasons: List[str]
+    user_features: Optional[Dict[str, Any]] = None
+    store_in_db: bool = True  # Optional flag to store in Aerospike (default: True for production use)
+
+class CustomMessageResponse(BaseModel):
+    user_id: str
+    message: str
+    churn_probability: float
+    churn_reasons: List[str]
+    user_context_used: str
+    generated_at: str
+    stored: bool
+    message_id: Optional[str] = None
+
 # Helper functions
 def store_features_in_aerospike(user_id: str, features: Dict[str, Any], feature_type: str):
     """Store features in Aerospike with proper key structure - merges with existing features"""
@@ -216,6 +234,44 @@ def retrieve_all_features(user_id: str) -> Dict[str, Any]:
             client = None
     
     return all_features, feature_freshness or datetime.utcnow().isoformat()
+
+def store_custom_message_in_aerospike(user_id: str, message_id: str, message: str, 
+                                     churn_probability: float, churn_reasons: List[str],
+                                     user_features: Optional[Dict[str, Any]] = None):
+    """Store custom user message in Aerospike"""
+    global client
+    
+    # Try to reconnect if client is None
+    if client is None:
+        if not connect_aerospike():
+            raise HTTPException(status_code=503, detail="Aerospike not available")
+    
+    try:
+        namespace = AEROSPIKE_NAMESPACE
+        set_name = "custom_user_messages"
+        key_name = f"{user_id}_{message_id}"
+        key = (namespace, set_name, key_name)
+        
+        message_record = {
+            "user_id": user_id,
+            "message_id": message_id,
+            "message": message,
+            "churn_prob": churn_probability,
+            "churn_reasons": churn_reasons,
+            "user_ftrs": user_features or {},
+            "created_at": datetime.utcnow().isoformat(),
+            "status": "generated"
+        }
+        
+        client.put(key, message_record)
+        logger.info(f"Stored custom message {message_id} for user {user_id} in Aerospike")
+        
+        return True
+    except Exception as e:
+        logger.error(f"Error storing custom message for user {user_id}: {str(e)}")
+        # Try to reconnect on error
+        client = None
+        raise HTTPException(status_code=500, detail=f"Failed to store custom message: {str(e)}")
 
 # API Endpoints
 
@@ -308,7 +364,8 @@ async def predict_churn(user_id: str) -> ChurnPredictionResponse:
                     user_id=user_id,
                     churn_probability=prediction_data["churn_probability"],
                     risk_segment=prediction_data["risk_segment"],
-                    churn_reasons=prediction_data["churn_reasons"]
+                    churn_reasons=prediction_data["churn_reasons"],
+                    user_features=features  # Pass user features for personalized message generation
                 )
             except Exception as e:
                 logger.error(f"Failed to trigger nudge for user {user_id}: {str(e)}")
@@ -630,6 +687,127 @@ async def check_data_quality():
         raise HTTPException(
             status_code=500,
             detail=f"Failed to check data quality: {str(e)}"
+        )
+
+# Custom Message API Endpoint
+@app.post("/messages/custom", response_model=CustomMessageResponse)
+async def send_custom_message(request: CustomMessageRequest) -> CustomMessageResponse:
+    """
+    Generate a custom personalized marketing message for a user
+    
+    This unified endpoint handles both production and testing use cases:
+    1. Uses LangChain and Gemini to generate a personalized message based on:
+       - Churn probability and reasons from ML model
+       - User demographic and behavioral features
+    2. Optionally stores the message in Aerospike in the 'custom_user_messages' set
+    
+    Args:
+        user_id: User identifier
+        churn_probability: Churn probability (0.0-1.0)
+        churn_reasons: List of churn reasons (e.g., ["INACTIVITY", "CART_ABANDONMENT"])
+        user_features: Optional user demographic and behavioral features. 
+                      If not provided and store_in_db=True, will attempt to retrieve from Aerospike.
+        store_in_db: If True, stores the message in Aerospike (default: True for production use)
+    
+    Returns:
+        Generated message with context information and storage status
+    """
+    try:
+        import uuid
+        
+        # Get user features if not provided (only if we're storing in DB, indicating production use)
+        user_features = request.user_features
+        if not user_features and request.store_in_db:
+            logger.info(f"Retrieving user features for {request.user_id}")
+            try:
+                user_features, _ = retrieve_all_features(request.user_id)
+            except Exception as e:
+                logger.warning(f"Could not retrieve user features for {request.user_id}: {e}")
+                user_features = {}
+        elif not user_features:
+            user_features = {}
+        
+        # Generate personalized message using LLM
+        logger.info(f"Generating custom message for user {request.user_id} (store_in_db={request.store_in_db})")
+        generated_message = await message_generator.generate_message(
+            user_id=request.user_id,
+            churn_probability=request.churn_probability,
+            churn_reasons=request.churn_reasons,
+            user_features=user_features
+        )
+        
+        if not generated_message:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to generate custom message. Check LLM configuration and GEMINI_API_KEY."
+            )
+        
+        # Build user context string for response (for debugging/visibility)
+        context_parts = []
+        if user_features.get("loyalty_tier"):
+            context_parts.append(f"Loyalty Tier: {user_features.get('loyalty_tier')}")
+        if user_features.get("geo_location"):
+            context_parts.append(f"Location: {user_features.get('geo_location')}")
+        if user_features.get("age"):
+            context_parts.append(f"Age: {user_features.get('age')}")
+        if user_features.get("days_last_login") is not None:
+            context_parts.append(f"Days since last login: {user_features.get('days_last_login')}")
+        if user_features.get("days_last_purch") is not None:
+            context_parts.append(f"Days since last purchase: {user_features.get('days_last_purch')}")
+        if user_features.get("avg_order_val") is not None:
+            context_parts.append(f"Average order value: ${user_features.get('avg_order_val'):.2f}")
+        if user_features.get("orders_6m") is not None:
+            context_parts.append(f"Orders in last 6 months: {user_features.get('orders_6m')}")
+        if user_features.get("cart_abandon") is not None:
+            abandon_rate = user_features.get('cart_abandon', 0) * 100
+            context_parts.append(f"Cart abandonment rate: {abandon_rate:.1f}%")
+        if user_features.get("sess_7d") is not None:
+            context_parts.append(f"Sessions in last 7 days: {user_features.get('sess_7d')}")
+        
+        user_context = ", ".join(context_parts) if context_parts else "Limited user information available"
+        
+        # Optionally store in Aerospike
+        message_id = None
+        stored = False
+        if request.store_in_db:
+            try:
+                message_id = f"msg_{uuid.uuid4().hex[:12]}"
+                store_custom_message_in_aerospike(
+                    user_id=request.user_id,
+                    message_id=message_id,
+                    message=generated_message,
+                    churn_probability=request.churn_probability,
+                    churn_reasons=request.churn_reasons,
+                    user_features=user_features
+                )
+                stored = True
+                logger.info(f"Message stored in Aerospike with ID: {message_id}")
+            except Exception as e:
+                logger.warning(f"Failed to store message in Aerospike: {e}")
+                # Don't fail the request if storage fails
+        
+        logger.info(f"Successfully generated custom message for user {request.user_id}")
+        
+        return CustomMessageResponse(
+            user_id=request.user_id,
+            message=generated_message,
+            churn_probability=request.churn_probability,
+            churn_reasons=request.churn_reasons,
+            user_context_used=user_context,
+            generated_at=datetime.utcnow().isoformat(),
+            stored=stored,
+            message_id=message_id
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating custom message for user {request.user_id}: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate custom message: {str(e)}"
         )
 
 if __name__ == "__main__":

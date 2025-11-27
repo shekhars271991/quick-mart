@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
 from datetime import datetime
 import httpx
@@ -194,9 +194,20 @@ class NudgeEngine:
         
         return False
     
-    async def execute_nudges(self, user_id: str, nudges: List[Dict[str, Any]]) -> List[NudgeAction]:
-        """Execute nudges - create actual coupons for discount nudges"""
+    async def execute_nudges(self, user_id: str, nudges: List[Dict[str, Any]], 
+                            user_features: Optional[Dict[str, Any]] = None) -> List[NudgeAction]:
+        """Execute nudges - create actual coupons for discount nudges and send custom messages"""
         executed_nudges = []
+        
+        # Get churn context from the nudge execution context
+        churn_reasons = getattr(self, '_current_churn_reasons', [])
+        churn_probability = getattr(self, '_current_churn_probability', 0.8)
+        
+        # Send custom message for all nudge triggers
+        try:
+            await self._send_custom_message(user_id, churn_probability, churn_reasons, user_features)
+        except Exception as e:
+            logger.error(f"Error sending custom message to user {user_id}: {e}")
         
         for nudge in nudges:
             logger.info(f"NUDGE EXECUTED - User: {user_id}, Type: {nudge['type']}, "
@@ -205,10 +216,6 @@ class NudgeEngine:
             # If it's a discount coupon, assign it to the user via QuickMart API
             if nudge["type"] == "Discount Coupon":
                 try:
-                    # Get churn context from the nudge execution context
-                    churn_reasons = getattr(self, '_current_churn_reasons', [])
-                    churn_probability = getattr(self, '_current_churn_probability', 0.8)
-                    
                     coupon_assigned = await self._assign_discount_coupon(
                         user_id, nudge, churn_reasons, churn_probability
                     )
@@ -275,6 +282,47 @@ class NudgeEngine:
                     
         except Exception as e:
             logger.error(f"Exception assigning coupon to user {user_id}: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return False
+    
+    async def _send_custom_message(self, user_id: str, churn_probability: float, 
+                                   churn_reasons: List[str], user_features: Optional[Dict[str, Any]] = None) -> bool:
+        """Send custom personalized message via the custom message API"""
+        try:
+            # Use the same service URL (internal call)
+            # In production, this could be a separate service URL, but for now we'll use localhost
+            # Since we're in the same service, we could also call directly, but using HTTP keeps it decoupled
+            api_url = os.getenv("API_SERVICE_URL", "http://localhost:8000")
+            
+            request_data = {
+                "user_id": user_id,
+                "churn_probability": churn_probability,
+                "churn_reasons": churn_reasons,
+                "user_features": user_features
+            }
+            
+            logger.info(f"Sending custom message request for user {user_id} via {api_url}/messages/custom")
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"{api_url}/messages/custom",
+                    json=request_data
+                )
+                
+                logger.info(f"Custom message response: {response.status_code} - {response.text[:200]}")
+                
+                if response.status_code == 200:
+                    response_data = response.json()
+                    message_id = response_data.get("message_id", "unknown")
+                    logger.info(f"Successfully sent custom message {message_id} to user {user_id}")
+                    return True
+                else:
+                    logger.error(f"Failed to send custom message: {response.status_code} - {response.text}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Exception sending custom message to user {user_id}: {e}")
             import traceback
             logger.error(f"Traceback: {traceback.format_exc()}")
             return False
@@ -358,7 +406,8 @@ class NudgeEngine:
         else:
             return "WELCOME10"  # Light discount for low risk
     
-    async def trigger_nudges(self, user_id: str, churn_probability: float, risk_segment: str, churn_reasons: List[str]) -> NudgeResponse:
+    async def trigger_nudges(self, user_id: str, churn_probability: float, risk_segment: str, 
+                            churn_reasons: List[str], user_features: Optional[Dict[str, Any]] = None) -> NudgeResponse:
         """Trigger nudges based on churn score and reasons"""
         logger.info(f"Processing nudge request for user {user_id} "
                    f"(score: {churn_probability}, segment: {risk_segment})")
@@ -379,8 +428,8 @@ class NudgeEngine:
                 timestamp=datetime.utcnow().isoformat()
             )
         
-        # Execute nudges
-        executed_nudges = await self.execute_nudges(user_id, matching_rule["nudges"])
+        # Execute nudges (this will also send custom message)
+        executed_nudges = await self.execute_nudges(user_id, matching_rule["nudges"], user_features)
         
         logger.info(f"Triggered {len(executed_nudges)} nudges for user {user_id} "
                    f"using {matching_rule['rule_id']}")

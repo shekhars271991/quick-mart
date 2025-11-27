@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     DEFAULT_TEST_SIZE: float = 0.2
     RANDOM_STATE: int = 42
     
+    # LLM Configuration
+    GEMINI_API_KEY: str = "AIzaSyA_ehzmC5vroq7GjJuty5giZKbnKqMH8Ic"
+    GEMINI_MODEL: str = "gemini-2.5-flash"  # Options: "gemini-1.5-flash" (faster) or "gemini-1.5-pro" (higher quality)
+    
     class Config:
         env_file = [".env", "env.config"]
         case_sensitive = True
@@ -51,3 +55,7 @@ if os.getenv("AEROSPIKE_NAMESPACE"):
     settings.AEROSPIKE_NAMESPACE = os.getenv("AEROSPIKE_NAMESPACE")
 if os.getenv("QUICKMART_API_URL"):
     settings.QUICKMART_API_URL = os.getenv("QUICKMART_API_URL")
+if os.getenv("GEMINI_API_KEY"):
+    settings.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if os.getenv("GEMINI_MODEL"):
+    settings.GEMINI_MODEL = os.getenv("GEMINI_MODEL")
