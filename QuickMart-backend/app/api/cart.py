@@ -49,19 +49,52 @@ async def add_to_cart(
                 detail="Product not found"
             )
         
+        # Store cart item details in user features for personalized messages
+        # This helps the LLM generate product-specific messages
+        cart_item_details = {
+            "name": product.get("name", ""),
+            "category": product.get("category", ""),
+            "subcategory": product.get("subcategory", ""),
+            "brand": product.get("brand", ""),
+            "price": product.get("price", 0)
+        }
+        
         # Update real-time features to indicate cart addition without checkout
         # This will increase churn risk indicators
         realtime_features = {
             "cart_no_buy": True,  # Flag indicating item added but not purchased
             "curr_sess_clk": 1,  # Increment session clicks
+            "cart_items": [cart_item_details]  # Store cart items for personalized messages
         }
         
         # Ingest real-time features
         try:
             await reco_service.ingest_realtime_features(user_id, realtime_features)
-            logger.info(f"✅ Updated real-time features for user {user_id}: cart_no_buy=True")
+            logger.info(f"✅ Updated real-time features for user {user_id}: cart_no_buy=True, cart_items={cart_item_details['name']}")
         except Exception as e:
             logger.error(f"❌ Failed to update real-time features for user {user_id}: {e}")
+        
+        # Also sync user profile data to ensure name, age, gender are available for personalized messages
+        try:
+            # Get user record for profile data
+            user_record = await database_manager.get("users", user_id)
+            if user_record and user_record.get("profile"):
+                profile = user_record["profile"]
+                profile_features = {
+                    "name": profile.get("name", ""),
+                    "full_name": profile.get("name", ""),  # Alias for compatibility
+                    "age": profile.get("age"),
+                    "geo_location": profile.get("location", ""),
+                    "loyalty_tier": profile.get("loyalty_tier", "")
+                }
+                # Remove None and empty values
+                profile_features = {k: v for k, v in profile_features.items() if v not in [None, "", 0]}
+                
+                if profile_features:
+                    await reco_service.ingest_user_profile(user_id, profile_features)
+                    logger.info(f"✅ Synced profile data for user {user_id} for message personalization")
+        except Exception as e:
+            logger.warning(f"Failed to sync profile data for user {user_id}: {e}")
         
         # Update behavior features - aggressively increase churn risk indicators
         # This will significantly increase churn risk for the next login

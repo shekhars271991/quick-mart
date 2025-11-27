@@ -11,7 +11,8 @@ from contextlib import asynccontextmanager
 from model_predictor import churn_predictor, get_model_health
 from nudge_engine import nudge_engine, get_nudge_health, NudgeResponse
 from training_service import ModelTrainer, get_training_status
-from message_generator import message_generator
+import message_generator as msg_gen_module
+from message_generator import initialize_message_generator
 from config import settings
 
 # Configure logging
@@ -22,7 +23,16 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
+    global client
     connect_aerospike()
+    # Initialize message generator with Aerospike client
+    if client:
+        msg_gen_module.message_generator = initialize_message_generator(client)
+        logger.info("Message generator initialized with Aerospike client")
+    else:
+        # Fallback - initialize without Aerospike client (name fetching won't work)
+        msg_gen_module.message_generator = initialize_message_generator(None)
+        logger.warning("Message generator initialized WITHOUT Aerospike client - name fetching will be limited")
     yield
     # Shutdown (if needed)
     pass
@@ -714,6 +724,15 @@ async def send_custom_message(request: CustomMessageRequest) -> CustomMessageRes
     Returns:
         Generated message with context information and storage status
     """
+    # Ensure message generator is initialized
+    if msg_gen_module.message_generator is None:
+        logger.warning("Message generator not initialized, initializing now")
+        msg_gen_module.message_generator = initialize_message_generator(client)
+        if msg_gen_module.message_generator is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Message generator initialization failed. Check Gemini API configuration."
+            )
     try:
         import uuid
         
@@ -731,7 +750,7 @@ async def send_custom_message(request: CustomMessageRequest) -> CustomMessageRes
         
         # Generate personalized message using LLM
         logger.info(f"Generating custom message for user {request.user_id} (store_in_db={request.store_in_db})")
-        generated_message = await message_generator.generate_message(
+        generated_message = await msg_gen_module.message_generator.generate_message(
             user_id=request.user_id,
             churn_probability=request.churn_probability,
             churn_reasons=request.churn_reasons,
