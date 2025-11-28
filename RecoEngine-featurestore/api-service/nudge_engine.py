@@ -43,7 +43,7 @@ NUDGE_RULES = [
     },
     {
         "rule_id": "low_risk_engagement",
-        "churn_score_range": [0.0, 0.4],
+        "churn_score_range": [0.0, 0.3],  # Adjusted to avoid overlap with medium risk
         "churn_reasons": [],  # Matches all reasons (catch-all for low risk)
         "nudges": [
             {"type": "Custom Message", "content_template": "AI-Generated Engagement Message", "channel": "sms", "priority": 1}
@@ -51,10 +51,11 @@ NUDGE_RULES = [
     },
     {
         "rule_id": "medium_risk_cart_abandonment",
-        "churn_score_range": [0.3, 0.6],
+        "churn_score_range": [0.3, 0.7],  # Expanded range to cover up to 70%
         "churn_reasons": ["cart", "abandon"],  # Will match any reason containing these words
         "nudges": [
-            {"type": "Custom Message", "content_template": "AI-Generated Cart Reminder", "channel": "sms", "priority": 1}
+            {"type": "Custom Message", "content_template": "AI-Generated Cart Reminder", "channel": "sms", "priority": 1},
+            {"type": "Discount Coupon", "content_template": "15% Off Cart Recovery", "channel": "app", "priority": 2, "discount_percent": 15, "coupon_code": "CART15"}
         ]
     },
     {

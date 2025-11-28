@@ -9,6 +9,7 @@ import logging
 import httpx
 import asyncio
 import os
+import aerospike
 
 from core.database import database_manager
 from core.auth import auth_manager, get_current_user
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 auth_router = APIRouter()
 
 # RecoEngine configuration
-RECO_ENGINE_BASE_URL = os.getenv("RECO_ENGINE_URL", "http://localhost:8000")
+RECO_ENGINE_BASE_URL = os.getenv("RECO_ENGINE_URL", "http://localhost:8001")
 
 async def trigger_churn_prediction(user_id: str) -> dict:
     """Trigger churn prediction for user after login"""
@@ -241,6 +242,86 @@ async def update_user_profile(
 
 @auth_router.post("/logout")
 async def logout_user(current_user: dict = Depends(get_current_user)):
-    """Logout user (client should discard token)"""
-    logger.info(f"User logged out: {current_user['user_id']}")
+    """Logout user - track cart abandonment if items in cart"""
+    user_id = current_user['user_id']
+    
+    # Check if user has items in cart (cart abandonment detection)
+    # Cart items are stored in realtime features when added to cart
+    try:
+        # Get cart items from realtime features (stored when items were added)
+        realtime_key = f"{user_id}_realtime"
+        cart_items = []
+        cart_no_buy = False
+        current_count = 0
+        
+        # Check if database client is connected
+        if not database_manager.client:
+            logger.error(f"🔍 DEBUG: Database client not connected - cannot retrieve cart items")
+        else:
+            try:
+                key_tuple = (database_manager.namespace, "user_features", realtime_key)
+                (key, metadata, bins) = database_manager.client.get(key_tuple)
+                
+                logger.info(f"🔍 DEBUG: Retrieved bins for {user_id}: {type(bins)} - {bins}")
+                
+                if bins:
+                    # Data is wrapped in 'data' bin
+                    realtime_data = bins.get('data', bins)  # Try 'data' bin first, fallback to bins directly
+                    logger.info(f"🔍 DEBUG: Realtime data keys: {list(realtime_data.keys()) if isinstance(realtime_data, dict) else 'Not a dict'}")
+                    
+                    if isinstance(realtime_data, dict):
+                        cart_items = realtime_data.get('cart_items', [])
+                        cart_no_buy = realtime_data.get('cart_no_buy', False)
+                        current_count = realtime_data.get('abandon_count', 0)
+                        logger.info(f"🔍 DEBUG: cart_items={len(cart_items) if cart_items else 0} items, cart_no_buy={cart_no_buy}, abandon_count={current_count}")
+                else:
+                    logger.warning(f"🔍 DEBUG: bins is None for {user_id}")
+                    
+            except aerospike.exception.RecordNotFound:
+                logger.info(f"🔍 DEBUG: No realtime features record found for {user_id}")
+            except Exception as e:
+                logger.error(f"🔍 DEBUG: Exception retrieving realtime features: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+        
+        # Check if user has cart items or cart_no_buy flag is set
+        if (cart_items and len(cart_items) > 0) or cart_no_buy:
+            # User has items in cart - increment abandonment counter
+            items_count = len(cart_items) if cart_items else 1
+            logger.warning(f"🛒 Cart abandonment detected for {user_id}: {items_count} items in cart")
+            
+            # Increment counter
+            new_count = current_count + 1
+            
+            # Store updated counter in realtime features
+            abandon_features = {
+                "user_id": user_id,
+                "abandon_count": new_count,
+                "last_abandon_at": datetime.utcnow().isoformat(),
+                "cart_item_cnt": items_count  # Shortened to fit 15-char limit
+            }
+            
+            # Send to RecoEngine
+            async with httpx.AsyncClient() as client:
+                try:
+                    response = await client.post(
+                        f"{RECO_ENGINE_BASE_URL}/ingest/realtime",
+                        json=abandon_features,
+                        timeout=5.0
+                    )
+                    if response.status_code == 200:
+                        logger.info(f"✅ Tracked cart abandonment #{new_count} for user {user_id}")
+                    else:
+                        logger.error(f"Failed to ingest abandonment count: {response.status_code}")
+                except Exception as e:
+                    logger.error(f"Failed to track abandonment count: {e}")
+        else:
+            logger.info(f"No cart items for {user_id} - no abandonment tracked")
+    
+    except Exception as e:
+        logger.error(f"Error checking cart abandonment on logout: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+    
+    logger.info(f"User logged out: {user_id}")
     return {"message": "Successfully logged out"}

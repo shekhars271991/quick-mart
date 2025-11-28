@@ -127,6 +127,9 @@ class RealTimeSessionFeatures(BaseModel):
     cart_no_buy: Optional[bool] = None
     bounce_flag: Optional[bool] = None
     cart_items: Optional[List[Dict[str, Any]]] = None  # Cart items for personalized messages
+    abandon_count: Optional[int] = None  # Track how many times user abandoned cart
+    last_abandon_at: Optional[str] = None  # Timestamp of last abandonment
+    cart_items_count: Optional[int] = None  # Number of items in cart when abandoned
 
 class ChurnPredictionResponse(BaseModel):
     user_id: str
@@ -352,7 +355,8 @@ async def predict_churn(user_id: str) -> ChurnPredictionResponse:
         
         # Log key features for debugging
         logger.info(f"Predicting churn for user {user_id}")
-        logger.info(f"Key features - cart_abandon: {features.get('cart_abandon')}, "
+        logger.info(f"Key features - abandon_count: {features.get('abandon_count', 0)}, "
+                   f"cart_abandon: {features.get('cart_abandon')}, "
                    f"sess_7d: {features.get('sess_7d')}, "
                    f"days_last_purch: {features.get('days_last_purch')}, "
                    f"days_last_login: {features.get('days_last_login')}, "

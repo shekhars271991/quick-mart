@@ -114,6 +114,23 @@ class ChurnPredictor:
         # Get prediction probability
         churn_probability = float(self.model.predict_proba(feature_vector)[0][1])
         
+        # Apply dynamic boost based on cart abandonment count
+        abandon_count = features.get('abandon_count', 0)
+        if abandon_count > 0:
+            # Boost churn probability based on consecutive abandonments
+            # First abandonment: +10%, second: +15%, third+: +20%
+            if abandon_count == 1:
+                boost = 0.10
+            elif abandon_count == 2:
+                boost = 0.15
+            else:  # 3 or more
+                boost = 0.20
+            
+            original_prob = churn_probability
+            churn_probability = min(0.95, churn_probability + boost)
+            logger.info(f"🎯 Applied cart abandonment boost: count={abandon_count}, "
+                       f"boost=+{boost:.0%}, {original_prob:.2%} → {churn_probability:.2%}")
+        
         # Determine risk segment
         if churn_probability >= 0.8:
             risk_segment = "critical"
@@ -237,12 +254,25 @@ class ChurnPredictor:
         feature_importance = {}
         
         # Rule-based analysis
+        # Check for recent cart abandonment count (dynamic signal)
+        abandon_count = features.get('abandon_count', 0)
+        if abandon_count > 0:
+            if abandon_count >= 3:
+                reasons.append(f"Abandoned cart {abandon_count} times recently (high risk)")
+                feature_importance['abandon_count'] = 0.9
+            elif abandon_count == 2:
+                reasons.append(f"Abandoned cart {abandon_count} times recently")
+                feature_importance['abandon_count'] = 0.8
+            else:
+                reasons.append(f"Abandoned cart {abandon_count} time recently")
+                feature_importance['abandon_count'] = 0.7
+        
         if features.get('days_last_login', 0) > 7:
             reasons.append("Inactive for extended period")
             feature_importance['days_last_login'] = 0.8
         
         if features.get('cart_abandon', 0) > 0.5:
-            reasons.append("High cart abandonment rate")
+            reasons.append("High cart abandonment rate (historical)")
             feature_importance['cart_abandon'] = 0.7
         
         if features.get('sess_7d', 0) < 2:

@@ -116,7 +116,24 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            logout: () => {
+            logout: async () => {
+                // Call backend logout endpoint to track cart abandonment
+                try {
+                    const token = localStorage.getItem('access_token')
+                    if (token) {
+                        await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                            },
+                        })
+                    }
+                } catch (error) {
+                    console.error('Logout API error:', error)
+                    // Continue with local logout even if API fails
+                }
+
+                // Clear local state
                 localStorage.removeItem('access_token')
                 localStorage.removeItem('user')
 
