@@ -42,6 +42,14 @@ NUDGE_RULES = [
         ]
     },
     {
+        "rule_id": "low_risk_engagement",
+        "churn_score_range": [0.0, 0.4],
+        "churn_reasons": [],  # Matches all reasons (catch-all for low risk)
+        "nudges": [
+            {"type": "Custom Message", "content_template": "AI-Generated Engagement Message", "channel": "sms", "priority": 1}
+        ]
+    },
+    {
         "rule_id": "medium_risk_cart_abandonment",
         "churn_score_range": [0.3, 0.6],
         "churn_reasons": ["cart", "abandon"],  # Will match any reason containing these words
@@ -160,6 +168,12 @@ class NudgeEngine:
             # Check if any churn reason matches (using flexible substring matching)
             rule_reasons = rule["churn_reasons"]
             reason_matched = False
+            
+            # If rule_reasons is empty, it's a catch-all rule (matches any reason)
+            if not rule_reasons or len(rule_reasons) == 0:
+                reason_matched = True
+                logger.info(f"Rule {rule['rule_id']} matched (catch-all): score={churn_probability} in {rule['churn_score_range']}")
+                return rule
             
             for rule_reason in rule_reasons:
                 for churn_reason in churn_reasons:

@@ -153,7 +153,7 @@ Write ONE SMS exactly as it would be sent (max 160 chars):"""
             else:
                 cust_type = "frequent customer"
             
-            prompt = f"""Create a personalized re-engagement SMS. Use the customer's name.
+            prompt = f"""Create a personalized brand engagement SMS for QuickMart. Use the customer's name.
 
 CUSTOMER DATA:
 Name: {name if name else 'NOT PROVIDED'}
@@ -167,19 +167,20 @@ STRICT RULES:
    - "Hey Tom!" or "Tom,"
    
 2. AGE-APPROPRIATE TONE & LANGUAGE:
-   - Age 18-25: Casual → "Hey Tom! Miss you 🎉 Check out what's new!"
-   - Age 26-40: Friendly → "Sarah, we've got new arrivals you'll love!"
-   - Age 40-60: Professional → "Robert, welcome back! Explore our latest products."
-   - Age 60+: Respectful → "Hello Margaret, we'd love to see you again."
+   - Age 18-25: Casual + emoji → "Hey Tom! Check out our new drops 🔥 Shop now!"
+   - Age 26-40: Friendly → "Sarah, discover something special today at QuickMart!"
+   - Age 40-60: Professional → "Robert, quality products waiting for you at QuickMart."
+   - Age 60+: Clear, respectful → "Hello Margaret, shop our trusted collection today."
 
-3. MATCH CUSTOMER TYPE:
-   - First-time visitor: "Come explore our selection!"
-   - Occasional: "It's been a while! See what's new"
-   - Frequent: "We miss you! Your favorites await"
+3. MESSAGE STYLE (vary based on customer):
+   - First-time visitor: Welcoming, inviting tone
+   - Occasional: Friendly reminder about value
+   - Frequent: Appreciation + new arrivals
+   - NO "miss you" or "come back" (they're active!)
 
 4. MAX 160 characters
-5. Do NOT mention discounts
-6. Include call-to-action (shop, explore, browse, etc.)
+5. Do NOT mention discounts or promotions
+6. Include call-to-action (shop, explore, discover, browse)
 
 Write ONE SMS exactly as it would be sent (max 160 chars):"""
 

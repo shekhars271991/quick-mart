@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     RANDOM_STATE: int = 42
     
     # LLM Configuration
-    GEMINI_API_KEY: str = "AIzaSyA_ehzmC5vroq7GjJuty5giZKbnKqMH8Ic"
+    GEMINI_API_KEY: str = ""  # Set via environment variable or .env file
     GEMINI_MODEL: str = "gemini-2.5-flash"  # Options: "gemini-1.5-flash" (faster) or "gemini-1.5-pro" (higher quality)
     
     class Config:

@@ -370,22 +370,20 @@ async def predict_churn(user_id: str) -> ChurnPredictionResponse:
         logger.info(f"Top churn reasons: {prediction_data.get('churn_reasons', [])[:3]}")
         
         # Trigger nudges using integrated nudge engine
+        # Now triggers for ALL users to send engagement messages
         nudge_response = None
-        # Trigger for high/critical risk OR if cart abandonment detected at any risk level
-        has_cart_abandonment = any("cart" in reason.lower() or "abandon" in reason.lower() 
-                                   for reason in prediction_data["churn_reasons"])
-        
-        if prediction_data["risk_segment"] in ["high", "critical"] or has_cart_abandonment:
-            try:
-                nudge_response = await nudge_engine.trigger_nudges(
-                    user_id=user_id,
-                    churn_probability=prediction_data["churn_probability"],
-                    risk_segment=prediction_data["risk_segment"],
-                    churn_reasons=prediction_data["churn_reasons"],
-                    user_features=features  # Pass user features for personalized message generation
-                )
-            except Exception as e:
-                logger.error(f"Failed to trigger nudge for user {user_id}: {str(e)}")
+        try:
+            nudge_response = await nudge_engine.trigger_nudges(
+                user_id=user_id,
+                churn_probability=prediction_data["churn_probability"],
+                risk_segment=prediction_data["risk_segment"],
+                churn_reasons=prediction_data["churn_reasons"],
+                user_features=features  # Pass user features for personalized message generation
+            )
+            if nudge_response:
+                logger.info(f"Nudges triggered for user {user_id}: {len(nudge_response.nudges_triggered)} actions")
+        except Exception as e:
+            logger.error(f"Failed to trigger nudge for user {user_id}: {str(e)}")
         
         # Prepare response
         response = ChurnPredictionResponse(

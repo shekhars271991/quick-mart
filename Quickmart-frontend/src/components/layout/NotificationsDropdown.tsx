@@ -1,7 +1,7 @@
-import { Bell, Check, X } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
-import { useNotifications } from '../../hooks/useNotifications'
 import { format } from 'date-fns'
+import { Bell, Check, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useNotifications } from '../../hooks/useNotifications'
 
 export default function NotificationsDropdown() {
     const [isOpen, setIsOpen] = useState(false)
@@ -106,9 +106,8 @@ export default function NotificationsDropdown() {
                                     <div
                                         key={message.message_id}
                                         onClick={() => handleMessageClick(message.message_id, message.status)}
-                                        className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                                            message.status === 'generated' ? 'bg-blue-50/30' : ''
-                                        }`}
+                                        className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${message.status === 'generated' ? 'bg-blue-50/30' : ''
+                                            }`}
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex-1 min-w-0">
@@ -126,11 +125,6 @@ export default function NotificationsDropdown() {
                                                     >
                                                         {(message.churn_probability * 100).toFixed(0)}% churn risk
                                                     </span>
-                                                    {message.churn_reasons.length > 0 && (
-                                                        <span className="text-xs text-gray-500">
-                                                            {message.churn_reasons[0].replace(/_/g, ' ')}
-                                                        </span>
-                                                    )}
                                                 </div>
 
                                                 {/* Timestamp */}
