@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Any
 import aerospike
 import httpx
 import os
+import sys
 import json
 from datetime import datetime
 import logging
@@ -14,6 +15,21 @@ from training_service import ModelTrainer, get_training_status
 import message_generator as msg_gen_module
 from message_generator import initialize_message_generator
 from config import settings
+
+# Agent flow toggle - set USE_AGENT_FLOW=true to use LangGraph agent
+USE_AGENT_FLOW = os.getenv("USE_AGENT_FLOW", "false").lower() == "true"
+AGENT_IMPORT_ERROR = None
+
+# Agent imports (only loaded when needed) - Requires Python 3.10+ and LangGraph 1.0+
+if USE_AGENT_FLOW:
+    try:
+        from agent import run_agent_prediction, get_aerospike_saver, configure_tools as configure_agent_tools
+        print("✅ Agent module loaded successfully (LangGraph 1.0+, Python 3.10+)")
+    except ImportError as e:
+        AGENT_IMPORT_ERROR = str(e)
+        print(f"⚠️ Agent module import failed: {e}")
+        print("   Falling back to manual flow.")
+        USE_AGENT_FLOW = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +49,21 @@ async def lifespan(app: FastAPI):
         # Fallback - initialize without Aerospike client (name fetching won't work)
         msg_gen_module.message_generator = initialize_message_generator(None)
         logger.warning("Message generator initialized WITHOUT Aerospike client - name fetching will be limited")
+    
+    # Initialize agent tools if agent flow is enabled
+    if USE_AGENT_FLOW:
+        logger.info("🤖 Agent flow ENABLED - initializing LangGraph agent tools")
+        configure_agent_tools(
+            aerospike_client=client,
+            churn_predictor=churn_predictor,
+            nudge_engine=nudge_engine,
+            message_generator=msg_gen_module.message_generator,
+            namespace=AEROSPIKE_NAMESPACE
+        )
+        logger.info("✅ Agent tools configured successfully")
+    else:
+        logger.info("📋 Manual flow ENABLED - using step-by-step processing")
+    
     yield
     # Shutdown (if needed)
     pass
@@ -298,7 +329,7 @@ async def root():
 @app.post("/ingest/profile")
 async def ingest_profile_features(features: UserProfileFeatures):
     """Feature Ingestion API - User Profile Features"""
-    feature_dict = features.dict(exclude_unset=True)
+    feature_dict = features.model_dump(exclude_unset=True)  # Pydantic v2
     user_id = feature_dict.pop("user_id")
     store_features_in_aerospike(user_id, feature_dict, "profile")
     return {"status": "success", "message": f"Profile features stored for user {user_id}"}
@@ -306,7 +337,7 @@ async def ingest_profile_features(features: UserProfileFeatures):
 @app.post("/ingest/behavior")
 async def ingest_behavior_features(features: UserBehaviorFeatures):
     """Feature Ingestion API - User Behavior Features"""
-    feature_dict = features.dict(exclude_unset=True)
+    feature_dict = features.model_dump(exclude_unset=True)  # Pydantic v2
     user_id = feature_dict.pop("user_id")
     store_features_in_aerospike(user_id, feature_dict, "behavior")
     return {"status": "success", "message": f"Behavior features stored for user {user_id}"}
@@ -314,7 +345,7 @@ async def ingest_behavior_features(features: UserBehaviorFeatures):
 @app.post("/ingest/transactional")
 async def ingest_transactional_features(features: TransactionalFeatures):
     """Feature Ingestion API - Transactional Features"""
-    feature_dict = features.dict(exclude_unset=True)
+    feature_dict = features.model_dump(exclude_unset=True)  # Pydantic v2
     user_id = feature_dict.pop("user_id")
     store_features_in_aerospike(user_id, feature_dict, "transactional")
     return {"status": "success", "message": f"Transactional features stored for user {user_id}"}
@@ -322,7 +353,7 @@ async def ingest_transactional_features(features: TransactionalFeatures):
 @app.post("/ingest/engagement")
 async def ingest_engagement_features(features: EngagementFeatures):
     """Feature Ingestion API - Engagement Features"""
-    feature_dict = features.dict(exclude_unset=True)
+    feature_dict = features.model_dump(exclude_unset=True)  # Pydantic v2
     user_id = feature_dict.pop("user_id")
     store_features_in_aerospike(user_id, feature_dict, "engagement")
     return {"status": "success", "message": f"Engagement features stored for user {user_id}"}
@@ -330,7 +361,7 @@ async def ingest_engagement_features(features: EngagementFeatures):
 @app.post("/ingest/support")
 async def ingest_support_features(features: SupportFeatures):
     """Feature Ingestion API - Support Features"""
-    feature_dict = features.dict(exclude_unset=True)
+    feature_dict = features.model_dump(exclude_unset=True)  # Pydantic v2
     user_id = feature_dict.pop("user_id")
     store_features_in_aerospike(user_id, feature_dict, "support")
     return {"status": "success", "message": f"Support features stored for user {user_id}"}
@@ -338,14 +369,222 @@ async def ingest_support_features(features: SupportFeatures):
 @app.post("/ingest/realtime")
 async def ingest_realtime_features(features: RealTimeSessionFeatures):
     """Feature Ingestion API - Real-time Session Features"""
-    feature_dict = features.dict(exclude_unset=True)
+    feature_dict = features.model_dump(exclude_unset=True)  # Pydantic v2
     user_id = feature_dict.pop("user_id")
     store_features_in_aerospike(user_id, feature_dict, "realtime")
     return {"status": "success", "message": f"Real-time features stored for user {user_id}"}
 
+
+# NOTE: /predict/test MUST be defined BEFORE /predict/{user_id} to avoid route conflict
+@app.post("/predict/test")
+async def test_predict_flow(
+    user_id: str = Query("user_001", description="User ID to test prediction for"),
+    force_agent: bool = Query(False, description="Force agent flow regardless of USE_AGENT_FLOW setting"),
+    verbose: bool = Query(True, description="Include detailed debug information")
+):
+    """
+    Test endpoint for debugging the prediction flow.
+    
+    This endpoint allows direct testing of both manual and agent flows
+    with detailed debug output for troubleshooting.
+    """
+    import time
+    start_time = time.time()
+    
+    debug_info = {
+        "test_params": {"user_id": user_id, "force_agent": force_agent, "verbose": verbose},
+        "environment": {
+            "USE_AGENT_FLOW_env": os.getenv("USE_AGENT_FLOW", "false"),
+            "USE_AGENT_FLOW_active": USE_AGENT_FLOW,
+            "flow_used": "agent" if (USE_AGENT_FLOW or force_agent) else "manual"
+        },
+        "steps": [],
+        "timing": {}
+    }
+    
+    try:
+        if USE_AGENT_FLOW or force_agent:
+            debug_info["steps"].append({"step": "init", "message": "Using AGENT flow (LangGraph)"})
+            
+            # Import agent module (needed whether USE_AGENT_FLOW is true or force_agent)
+            try:
+                from agent import run_agent_prediction as agent_predict, configure_tools as configure_agent_tools
+                if force_agent and not USE_AGENT_FLOW:
+                    configure_agent_tools(
+                        aerospike_client=client, churn_predictor=churn_predictor,
+                        nudge_engine=nudge_engine, message_generator=msg_gen_module.message_generator,
+                        namespace=AEROSPIKE_NAMESPACE
+                    )
+            except ImportError as e:
+                raise HTTPException(status_code=500, detail=f"Agent module not available: {str(e)}")
+            
+            step_start = time.time()
+            agent_result = await agent_predict(user_id=user_id, aerospike_client=client, use_checkpointer=True)
+            debug_info["timing"]["agent_execution"] = f"{(time.time() - step_start)*1000:.2f}ms"
+            
+            if verbose and agent_result.get("agent_reasoning"):
+                debug_info["agent_reasoning"] = agent_result.get("agent_reasoning", [])
+            
+            debug_info["steps"].append({
+                "step": "agent_complete",
+                "message": f"Agent workflow completed: {agent_result.get('current_step')}",
+                "error": agent_result.get("error")
+            })
+            
+            result = {
+                "success": not agent_result.get("error"),
+                "flow": "agent",
+                "user_id": user_id,
+                "prediction": agent_result.get("churn_prediction"),
+                "nudge_decision": agent_result.get("nudge_decision"),
+                "generated_nudge": agent_result.get("generated_nudge"),
+                "feature_count": len(agent_result.get("user_features", {}) or {}),
+            }
+        else:
+            debug_info["steps"].append({"step": "init", "message": "Using MANUAL flow"})
+            
+            step_start = time.time()
+            features, feature_freshness = retrieve_all_features(user_id)
+            debug_info["timing"]["feature_retrieval"] = f"{(time.time() - step_start)*1000:.2f}ms"
+            debug_info["steps"].append({"step": "features", "message": f"Retrieved {len(features)} features", "feature_freshness": feature_freshness})
+            
+            if not features:
+                raise HTTPException(status_code=404, detail=f"No features found for user {user_id}")
+            
+            step_start = time.time()
+            prediction_data = churn_predictor.predict_churn(features)
+            debug_info["timing"]["prediction"] = f"{(time.time() - step_start)*1000:.2f}ms"
+            debug_info["steps"].append({
+                "step": "prediction",
+                "message": f"Churn: {prediction_data['churn_probability']:.1%}, Segment: {prediction_data['risk_segment']}",
+                "reasons": prediction_data["churn_reasons"][:3]
+            })
+            
+            step_start = time.time()
+            nudge_response = None
+            try:
+                nudge_response = await nudge_engine.trigger_nudges(
+                    user_id=user_id, churn_probability=prediction_data["churn_probability"],
+                    risk_segment=prediction_data["risk_segment"], churn_reasons=prediction_data["churn_reasons"],
+                    user_features=features
+                )
+            except Exception as e:
+                debug_info["steps"].append({"step": "nudge_error", "message": str(e)})
+            
+            debug_info["timing"]["nudge_trigger"] = f"{(time.time() - step_start)*1000:.2f}ms"
+            debug_info["steps"].append({
+                "step": "nudge",
+                "message": f"Nudges triggered: {len(nudge_response.nudges_triggered) if nudge_response else 0}",
+                "rule_matched": nudge_response.rule_matched if nudge_response else None
+            })
+            
+            result = {
+                "success": True, "flow": "manual", "user_id": user_id,
+                "prediction": {
+                    "churn_probability": prediction_data["churn_probability"],
+                    "risk_segment": prediction_data["risk_segment"],
+                    "churn_reasons": prediction_data["churn_reasons"],
+                    "confidence_score": prediction_data["confidence_score"]
+                },
+                "nudges_triggered": len(nudge_response.nudges_triggered) if nudge_response else 0,
+                "feature_count": len(features),
+            }
+        
+        debug_info["timing"]["total"] = f"{(time.time() - start_time)*1000:.2f}ms"
+        if verbose:
+            result["debug"] = debug_info
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Test prediction failed: {str(e)}")
+        debug_info["steps"].append({"step": "error", "message": str(e)})
+        debug_info["timing"]["total"] = f"{(time.time() - start_time)*1000:.2f}ms"
+        return {"success": False, "error": str(e), "debug": debug_info if verbose else None}
+
+
 @app.post("/predict/{user_id}")
 async def predict_churn(user_id: str) -> ChurnPredictionResponse:
-    """Churn Prediction API - Fetch features and predict churn probability"""
+    """
+    Churn Prediction API - Fetch features and predict churn probability.
+    
+    This endpoint supports two execution modes controlled by USE_AGENT_FLOW env var:
+    - Manual flow (default): Step-by-step processing with explicit function calls
+    - Agent flow: LangGraph-based AI agent with Aerospike checkpointing
+    """
+    
+    # =========================================================================
+    # AGENT FLOW: Use LangGraph agent with checkpointing
+    # =========================================================================
+    if USE_AGENT_FLOW:
+        logger.info(f"🤖 Using AGENT flow for user {user_id}")
+        try:
+            # Run the agent-based prediction workflow
+            agent_result = await run_agent_prediction(
+                user_id=user_id,
+                aerospike_client=client,
+                use_checkpointer=True
+            )
+            
+            # Check for errors
+            if agent_result.get("error"):
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Agent workflow error: {agent_result['error']}"
+                )
+            
+            # Extract prediction from agent result
+            prediction = agent_result.get("churn_prediction", {})
+            nudge_decision = agent_result.get("nudge_decision", {})
+            generated_nudge = agent_result.get("generated_nudge", {})
+            
+            if not prediction:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No features found for user {user_id}"
+                )
+            
+            # Build nudges_triggered from agent result
+            nudges_triggered = None
+            if nudge_decision.get("should_nudge") and generated_nudge:
+                from nudge_engine import NudgeAction
+                nudges_triggered = [
+                    NudgeAction(
+                        action_type=nudge_decision.get("nudge_type", "general"),
+                        content_template=generated_nudge.get("message", ""),
+                        channel=generated_nudge.get("channel", "in_app"),
+                        priority=1  # Default priority
+                    ).model_dump()  # Pydantic v2
+                ]
+            
+            # Build response
+            response = ChurnPredictionResponse(
+                user_id=user_id,
+                churn_probability=prediction.get("churn_probability", 0.0),
+                risk_segment=prediction.get("risk_segment", "unknown"),
+                churn_reasons=prediction.get("churn_reasons", []),
+                confidence_score=prediction.get("confidence_score", 0.0),
+                features_retrieved=agent_result.get("user_features", {}),
+                feature_freshness=agent_result.get("feature_freshness", datetime.utcnow().isoformat()),
+                prediction_timestamp=datetime.utcnow().isoformat(),
+                nudges_triggered=nudges_triggered,
+                nudge_rule_matched=nudge_decision.get("rule_matched")
+            )
+            
+            logger.info(f"🤖 Agent flow completed for user {user_id}")
+            return response
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Agent flow error for user {user_id}: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Agent prediction failed: {str(e)}")
+    
+    # =========================================================================
+    # MANUAL FLOW: Original step-by-step processing
+    # =========================================================================
+    logger.info(f"📋 Using MANUAL flow for user {user_id}")
     try:
         # Retrieve all features from Aerospike
         features, feature_freshness = retrieve_all_features(user_id)
@@ -399,7 +638,7 @@ async def predict_churn(user_id: str) -> ChurnPredictionResponse:
             features_retrieved=features,
             feature_freshness=feature_freshness,
             prediction_timestamp=datetime.utcnow().isoformat(),
-            nudges_triggered=[nudge.dict() for nudge in nudge_response.nudges_triggered] if nudge_response else None,
+            nudges_triggered=[nudge.model_dump() for nudge in nudge_response.nudges_triggered] if nudge_response else None,  # Pydantic v2
             nudge_rule_matched=nudge_response.rule_matched if nudge_response else None
         )
         
@@ -460,11 +699,19 @@ async def health_check():
         # Get nudge engine health
         nudge_health = get_nudge_health()
         
+        # Agent flow status
+        agent_status = {
+            "enabled": USE_AGENT_FLOW,
+            "flow_mode": "agent" if USE_AGENT_FLOW else "manual",
+            "checkpointer": "aerospike" if USE_AGENT_FLOW else "none"
+        }
+        
         return {
             "status": "healthy" if aerospike_status == "connected" and model_health["model_loaded"] else "degraded",
             "aerospike": aerospike_status,
             "model": model_health,
             "nudge_engine": nudge_health,
+            "agent": agent_status,
             "timestamp": datetime.utcnow().isoformat()
         }
     except Exception as e:
@@ -472,6 +719,21 @@ async def health_check():
             "status": "unhealthy",
             "error": str(e)
         }
+
+
+@app.get("/agent/status")
+async def get_agent_status():
+    """Get detailed agent status and configuration"""
+    return {
+        "agent_flow_enabled": USE_AGENT_FLOW,
+        "flow_mode": "agent" if USE_AGENT_FLOW else "manual",
+       
+        "checkpointer": {
+            "type": "AerospikeSaver" if USE_AGENT_FLOW else "none",
+            "namespace": AEROSPIKE_NAMESPACE if USE_AGENT_FLOW else None
+        }
+    }
+
 
 # Nudge Engine Endpoints
 @app.get("/nudge/rules")

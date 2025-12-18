@@ -1,13 +1,22 @@
 """
 RecoEngine Configuration Management
+
+Compatible with Pydantic v2 and pydantic-settings
 """
 
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
 class Settings(BaseSettings):
     """Application settings with environment variable support"""
+    
+    # Pydantic v2 settings configuration
+    model_config = SettingsConfigDict(
+        env_file=[".env", "env.config", "../env.config"],
+        case_sensitive=True,
+        extra="ignore"  # Ignore extra environment variables
+    )
     
     # Database Configuration
     AEROSPIKE_HOST: str = "localhost"
@@ -38,10 +47,8 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""  # Set via environment variable or .env file
     GEMINI_MODEL: str = "gemini-2.5-flash"  # Options: "gemini-1.5-flash" (faster) or "gemini-1.5-pro" (higher quality)
     
-    class Config:
-        env_file = [".env", "env.config"]
-        case_sensitive = True
-        extra = "ignore"  # Ignore extra environment variables
+    # Agent Flow Configuration
+    USE_AGENT_FLOW: bool = False  # Set to True to use LangGraph agent workflow
 
 # Create settings instance
 settings = Settings()
@@ -59,3 +66,5 @@ if os.getenv("GEMINI_API_KEY"):
     settings.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if os.getenv("GEMINI_MODEL"):
     settings.GEMINI_MODEL = os.getenv("GEMINI_MODEL")
+if os.getenv("USE_AGENT_FLOW"):
+    settings.USE_AGENT_FLOW = os.getenv("USE_AGENT_FLOW", "false").lower() == "true"

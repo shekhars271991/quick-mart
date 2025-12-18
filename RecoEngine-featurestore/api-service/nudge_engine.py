@@ -18,10 +18,14 @@ class NudgeRequest(BaseModel):
     churn_reasons: List[str]
 
 class NudgeAction(BaseModel):
-    type: str
+    """Nudge action model - compatible with Pydantic v2"""
+    action_type: str  # Renamed from 'type' to avoid Pydantic v2 protected namespace conflict
     content_template: str
     channel: str
     priority: int
+    
+    # Allow 'type' as alias for backward compatibility
+    model_config = {"populate_by_name": True}
 
 class NudgeResponse(BaseModel):
     user_id: str
@@ -253,7 +257,7 @@ class NudgeEngine:
                     logger.error(f"Error assigning discount coupon to user {user_id}: {e}")
             
             executed_nudges.append(NudgeAction(
-                type=nudge["type"],
+                action_type=nudge["type"],
                 content_template=nudge["content_template"],
                 channel=nudge["channel"],
                 priority=nudge["priority"]
