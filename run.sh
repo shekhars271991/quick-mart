@@ -190,7 +190,9 @@ run_local() {
      python -m uvicorn app.main:app --host 0.0.0.0 --port 3011 --reload) &
     BACKEND_PID=$!
     
+    # Source env.config for RecoEngine settings (including USE_AGENT_FLOW)
     (cd RecoEngine-featurestore/api-service && source venv/bin/activate && \
+     set -a && source ../env.config 2>/dev/null && set +a && \
      export AEROSPIKE_HOST=localhost AEROSPIKE_PORT=3000 AEROSPIKE_NAMESPACE=churnprediction && \
      python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload) &
     RECO_PID=$!

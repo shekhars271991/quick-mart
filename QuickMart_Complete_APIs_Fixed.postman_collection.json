@@ -1249,6 +1249,189 @@
                             }
                         }
                     ]
+                },
+                {
+                    "name": "🤖 LangGraph Agent",
+                    "description": "AI Agent workflow APIs with Aerospike checkpointing for churn prediction",
+                    "item": [
+                        {
+                            "name": "Get Agent Status",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/agent/status",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "agent",
+                                        "status"
+                                    ]
+                                },
+                                "description": "Get current agent configuration and status. Shows whether agent flow is enabled and workflow steps."
+                            }
+                        },
+                        {
+                            "name": "Test Prediction Flow (Debug)",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/predict/test?user_id={{test_user_id}}&force_agent=false&verbose=true",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "predict",
+                                        "test"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "user_id",
+                                            "value": "{{test_user_id}}",
+                                            "description": "User ID to test prediction for"
+                                        },
+                                        {
+                                            "key": "force_agent",
+                                            "value": "false",
+                                            "description": "Force agent flow regardless of USE_AGENT_FLOW setting"
+                                        },
+                                        {
+                                            "key": "verbose",
+                                            "value": "true",
+                                            "description": "Include detailed debug information"
+                                        }
+                                    ]
+                                },
+                                "description": "Test endpoint for debugging the prediction flow. Returns step-by-step execution info and timing."
+                            }
+                        },
+                        {
+                            "name": "Test Agent Flow (Forced)",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/predict/test?user_id={{test_user_id}}&force_agent=true&verbose=true",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "predict",
+                                        "test"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "user_id",
+                                            "value": "{{test_user_id}}",
+                                            "description": "User ID to test prediction for"
+                                        },
+                                        {
+                                            "key": "force_agent",
+                                            "value": "true",
+                                            "description": "Force agent flow regardless of USE_AGENT_FLOW setting"
+                                        },
+                                        {
+                                            "key": "verbose",
+                                            "value": "true",
+                                            "description": "Include detailed debug information"
+                                        }
+                                    ]
+                                },
+                                "description": "Force test the LangGraph agent flow even if USE_AGENT_FLOW=false. Useful for comparing manual vs agent flows."
+                            }
+                        },
+                        {
+                            "name": "Test Manual Flow",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/predict/test?user_id={{test_user_id}}&force_agent=false&verbose=true",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "predict",
+                                        "test"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "user_id",
+                                            "value": "{{test_user_id}}",
+                                            "description": "User ID to test prediction for"
+                                        },
+                                        {
+                                            "key": "force_agent",
+                                            "value": "false",
+                                            "description": "Use manual flow"
+                                        },
+                                        {
+                                            "key": "verbose",
+                                            "value": "true",
+                                            "description": "Include detailed debug information"
+                                        }
+                                    ]
+                                },
+                                "description": "Test the manual step-by-step flow with debug output."
+                            }
+                        },
+                        {
+                            "name": "Predict with Agent (user_001)",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/predict/user_001",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "predict",
+                                        "user_001"
+                                    ]
+                                },
+                                "description": "Run prediction for user_001. Uses agent or manual flow based on USE_AGENT_FLOW setting."
+                            }
+                        },
+                        {
+                            "name": "Predict with Agent (user_002)",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/predict/user_002",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "predict",
+                                        "user_002"
+                                    ]
+                                },
+                                "description": "Run prediction for user_002 (high churn risk user). Uses agent or manual flow based on USE_AGENT_FLOW setting."
+                            }
+                        },
+                        {
+                            "name": "Predict with Agent (user_005)",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{reco_url}}/predict/user_005",
+                                    "host": [
+                                        "{{reco_url}}"
+                                    ],
+                                    "path": [
+                                        "predict",
+                                        "user_005"
+                                    ]
+                                },
+                                "description": "Run prediction for user_005. Uses agent or manual flow based on USE_AGENT_FLOW setting."
+                            }
+                        }
+                    ]
                 }
             ]
         }

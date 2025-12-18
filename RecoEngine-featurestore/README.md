@@ -104,6 +104,53 @@ curl -X POST "http://localhost:8000/predict/test_001"
 └── docker-compose.yml  # Service orchestration
 ```
 
+## 🤖 Agent Flow (LangGraph)
+
+The RecoEngine supports two execution modes for the `/predict/{user_id}` endpoint:
+
+### Manual Flow (Default)
+Traditional step-by-step processing with explicit function calls.
+
+### Agent Flow (LangGraph + Aerospike Checkpointing)
+AI agent-based workflow with state checkpointing.
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│    RETRIEVE     │────▶│     PREDICT     │────▶│     DECIDE      │
+│    FEATURES     │     │      CHURN      │     │      NUDGE      │
+└─────────────────┘     └─────────────────┘     └────────┬────────┘
+                                                         │
+                                          ┌──────────────┴──────────────┐
+                                          │                             │
+                                     [should_nudge]              [no nudge]
+                                          │                             │
+                                          ▼                             ▼
+                               ┌─────────────────┐                    [END]
+                               │    GENERATE     │
+                               │     NUDGE       │
+                               └────────┬────────┘
+                                        │
+                                        ▼
+                               ┌─────────────────┐
+                               │      SEND       │
+                               │      NUDGE      │
+                               └────────┬────────┘
+                                        │
+                                        ▼
+                                      [END]
+```
+
+**Enable Agent Flow:**
+```bash
+# In env.config or export
+USE_AGENT_FLOW=true
+
+# Check status
+curl http://localhost:8001/agent/status
+```
+
+See [agent/README.md](api-service/agent/README.md) for detailed documentation.
+
 ## 📈 Production Notes
 
 This is a POC. For production: add authentication, monitoring, model versioning, and real nudge delivery systems.
