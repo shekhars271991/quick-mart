@@ -11,7 +11,7 @@ export default defineConfig({
         },
     },
     server: {
-        port: 3000,
+        port: 5173,  // Changed from 3000 to avoid conflict with Aerospike
         proxy: {
             '/api': {
                 // Default to 3011 for local development (./run.sh local), 3010 for Docker
