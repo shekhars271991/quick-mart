@@ -24,10 +24,10 @@ AGENT_IMPORT_ERROR = None
 if USE_AGENT_FLOW:
     try:
         from agent import run_agent_prediction, get_aerospike_saver, configure_tools as configure_agent_tools
-        print("✅ Agent module loaded successfully (LangGraph 1.0+, Python 3.10+)")
+        print("Agent module loaded successfully (LangGraph 1.0+, Python 3.10+)")
     except ImportError as e:
         AGENT_IMPORT_ERROR = str(e)
-        print(f"⚠️ Agent module import failed: {e}")
+        print(f"Agent module import failed: {e}")
         print("   Falling back to manual flow.")
         USE_AGENT_FLOW = False
 

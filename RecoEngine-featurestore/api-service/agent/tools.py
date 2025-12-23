@@ -317,30 +317,98 @@ async def send_nudge_tool(
         except Exception as e:
             logger.error(f"Failed to store nudge record: {e}")
     
-    # If coupon was included, create it in the coupons set
+    # If coupon was included, create it in the coupons set AND user_coupons set
+    coupon_id = None
     if coupon_code and _aerospike_client:
         try:
             from datetime import timedelta
+            now = datetime.utcnow()
+            
+            # Generate unique IDs
+            coupon_id = f"cpn_{uuid.uuid4().hex[:12]}"
+            user_coupon_id = f"uc_{uuid.uuid4().hex[:12]}"
+            
+            # Determine discount description
+            discount_desc = f"{discount_value}% off" if discount_type == "percentage" else f"${discount_value} off"
+            
+            # 1. Store coupon in "coupons" set (wrapped in "data" bin for Aerospike)
             coupon_record = {
+                "coupon_id": coupon_id,
                 "code": coupon_code,
-                "user_id": user_id,
-                "discount_type": discount_type,
-                "discount_value": discount_value,
-                "created_at": datetime.utcnow().isoformat(),
-                "valid_until": (datetime.utcnow() + timedelta(days=7)).isoformat(),
+                "name": "Special Offer for You",
+                "description": f"Exclusive {discount_desc} discount from your personalized offer",
+                "discount_type": discount_type or "percentage",
+                "discount_value": discount_value or 10,
+                "min_order_val": 0,
+                "max_discount": None,
+                "usage_limit": 1,
+                "usage_count": 0,
+                "valid_from": now.isoformat(),
+                "valid_until": (now + timedelta(days=7)).isoformat(),
                 "is_active": True,
-                "source": "agent_nudge"
+                "applicable_categories": [],
+                "applicable_products": [],
+                "created_at": now.isoformat(),
+                "user_id": user_id,
+                "source": "agent_nudge",
+                "nudge_id": nudge_id
             }
-            coupon_key = (_namespace, "coupons", coupon_code)
+            coupon_key = (_namespace, "coupons", coupon_id)
             _aerospike_client.put(coupon_key, {"data": coupon_record})
-            logger.info(f"Created coupon {coupon_code} for user {user_id}")
+            logger.info(f"Created coupon {coupon_code} (id: {coupon_id}) for user {user_id}")
+            
+            # 2. Create UserCoupon record in "user_coupons" set (links coupon to user)
+            user_coupon_record = {
+                "user_coupon_id": user_coupon_id,
+                "user_id": user_id,
+                "coupon_id": coupon_id,
+                "source": "nudge",
+                "nudge_id": nudge_id,
+                "churn_score": None,  # Will be populated if available
+                "status": "available",
+                "assigned_at": now.isoformat(),
+                "used_at": None,
+                "order_id": None
+            }
+            user_coupon_key = (_namespace, "user_coupons", user_coupon_id)
+            _aerospike_client.put(user_coupon_key, {"data": user_coupon_record})
+            logger.info(f"Linked coupon {coupon_id} to user {user_id} via user_coupon {user_coupon_id}")
+            
         except Exception as e:
             logger.error(f"Failed to create coupon: {e}")
+    
+    # Store notification message in "custom_user_messages" set
+    if _aerospike_client:
+        try:
+            now = datetime.utcnow()
+            message_id = f"msg_{uuid.uuid4().hex[:12]}"
+            message_key = f"{user_id}_{message_id}"
+            
+            message_record = {
+                "user_id": user_id,
+                "message_id": message_id,
+                "message": message,
+                "churn_prob": None,  # Shortened field name for Aerospike
+                "churn_reasons": [],
+                "user_ftrs": {},  # Shortened field name
+                "created_at": now.isoformat(),
+                "status": "generated",
+                "read_at": None,
+                "channel": channel,
+                "nudge_type": nudge_type,
+                "nudge_id": nudge_id,
+                "coupon_code": coupon_code
+            }
+            msg_key = (_namespace, "custom_user_messages", message_key)
+            _aerospike_client.put(msg_key, {"data": message_record})
+            logger.info(f"Stored notification message {message_id} for user {user_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to store notification message: {e}")
     
     # Also trigger via nudge engine if available for additional actions
     if _nudge_engine:
         try:
-            # The nudge engine might do additional things like queue emails, etc.
             logger.info(f"Nudge {nudge_id} would be processed by nudge engine for {channel} delivery")
         except Exception as e:
             logger.warning(f"Nudge engine processing failed: {e}")
