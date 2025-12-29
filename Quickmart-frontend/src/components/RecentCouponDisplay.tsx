@@ -1,3 +1,4 @@
+import { Copy, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-hot-toast'
 import type { UserCouponWithDetails } from '../types'
@@ -7,10 +8,9 @@ interface RecentCouponDisplayProps {
 }
 
 export default function RecentCouponDisplay({ userCouponWithDetails }: RecentCouponDisplayProps) {
-    const { coupon, user_coupon } = userCouponWithDetails
+    const { coupon } = userCouponWithDetails
     const [copied, setCopied] = useState(false)
-
-    const isChurnPrevention = user_coupon.source === 'nudge'
+    const [dismissed, setDismissed] = useState(false)
 
     const copyToClipboard = async (code: string) => {
         try {
@@ -25,113 +25,48 @@ export default function RecentCouponDisplay({ userCouponWithDetails }: RecentCou
 
     const getDiscountText = () => {
         if (coupon.discount_type === 'percentage') {
-            return `${coupon.discount_value}% OFF`
+            return `${coupon.discount_value}% off`
         } else {
-            return `$${coupon.discount_value} OFF`
+            return `$${coupon.discount_value} off`
         }
     }
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        })
-    }
+    if (dismissed) return null
 
     return (
-        <div className={`relative overflow-hidden rounded-xl border-2 p-6 ${isChurnPrevention
-            ? 'border-purple-200 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100'
-            : 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-100'
-            }`}>
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 h-20 w-20 rounded-full bg-white/20"></div>
-            <div className="absolute bottom-0 left-0 -mb-6 -ml-6 h-16 w-16 rounded-full bg-white/10"></div>
-
-            <div className="relative">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-
-                            <h3 className={`text-lg font-semibold ${isChurnPrevention ? 'text-purple-900' : 'text-green-900'
-                                }`}>
-                                Here is a welcome gift for you!
-                            </h3>
-                        </div>
-                        {isChurnPrevention && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-200 text-purple-800">
-                                🎯 AI-Personalized Offer
-                            </span>
-                        )}
-                    </div>
-                    <div className={`text-3xl font-bold ${isChurnPrevention ? 'text-purple-600' : 'text-green-600'
-                        }`}>
-                        {getDiscountText()}
-                    </div>
+        <div className="flex items-center justify-between gap-6 bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl px-5 py-4">
+            <div className="flex items-center gap-4">
+                <div className="hidden sm:flex items-center justify-center w-10 h-10 bg-amber-500/20 rounded-full">
+                    <span className="text-lg">🎁</span>
                 </div>
-
-                {/* Coupon Name and Description */}
-                <div className="mb-4">
-                    <h4 className={`text-xl font-bold mb-2 ${isChurnPrevention ? 'text-purple-800' : 'text-green-800'
-                        }`}>
-                        {coupon.name}
-                    </h4>
-                    {coupon.description && (
-                        <p className={`text-sm ${isChurnPrevention ? 'text-purple-700' : 'text-green-700'
-                            }`}>
-                            {coupon.description}
-                        </p>
-                    )}
+                <div>
+                    <p className="text-white text-sm">
+                        You have a special offer! Get <span className="text-amber-400">{getDiscountText()}</span> your order
+                    </p>
+                    <p className="text-slate-400 text-xs mt-0.5">
+                        Use code <span className="text-slate-200 font-mono">{coupon.code}</span> at checkout
+                    </p>
                 </div>
-
-                {/* Coupon Code Section */}
-                <div className="bg-white/70 backdrop-blur-sm rounded-lg p-4 mb-4 border border-white/50">
-                    <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                            <p className="text-xs text-gray-600 uppercase tracking-wide font-medium mb-1">
-                                Coupon Code
-                            </p>
-                            <p className="text-2xl font-mono font-bold text-gray-900 tracking-wider">
-                                {coupon.code}
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => copyToClipboard(coupon.code)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${copied
-                                ? 'bg-green-100 text-green-700 border border-green-200'
-                                : isChurnPrevention
-                                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200'
-                                    : 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                                }`}
-                        >
-                            {copied ? '✓ Copied!' : 'Copy Code'}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Details */}
-                <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 text-sm ${isChurnPrevention ? 'text-purple-700' : 'text-green-700'
-                    }`}>
-                    {coupon.minimum_order_value > 0 && (
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg">💰</span>
-                            <span>Min. order: ${coupon.minimum_order_value}</span>
-                        </div>
-                    )}
-                    {coupon.valid_until && (
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg">⏰</span>
-                            <span>Valid until: {formatDate(coupon.valid_until)}</span>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                        <span className="text-lg">✨</span>
-                        <span>Exclusively for you</span>
-                    </div>
-                </div>
-
-
+            </div>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={() => copyToClipboard(coupon.code)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all ${
+                        copied
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                >
+                    <Copy className="w-3.5 h-3.5" />
+                    {copied ? 'Copied!' : 'Copy code'}
+                </button>
+                <button
+                    onClick={() => setDismissed(true)}
+                    className="p-1.5 text-slate-500 hover:text-slate-300 rounded-lg hover:bg-white/10 transition-colors"
+                    aria-label="Dismiss"
+                >
+                    <X className="w-4 h-4" />
+                </button>
             </div>
         </div>
     )
