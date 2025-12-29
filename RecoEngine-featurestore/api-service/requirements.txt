@@ -27,3 +27,5 @@ langgraph>=0.2.0
 langgraph-checkpoint>=2.0.0
 # Aerospike checkpointer with async support (latest has aget_tuple, aput, etc.)
 langgraph-checkpoint-aerospike @ git+https://github.com/Aerospike-langgraph/checkpointer.git
+# Aerospike store for LangGraph (feature storage with InjectedStore support)
+langgraph-store-aerospike @ git+https://github.com/Aerospike-langgraph/store.git

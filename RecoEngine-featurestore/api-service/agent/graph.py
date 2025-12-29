@@ -14,48 +14,52 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 from .state import AgentState, create_initial_state
 from .tools import (
-    retrieve_user_features_tool,
     predict_churn_tool,
     decide_nudge_tool,
     generate_nudge_message_tool,
     send_nudge_tool,
 )
 from .checkpointer import get_aerospike_saver, get_checkpoint_config
+from .store_helper import get_aerospike_store, retrieve_all_user_features_async
 
 logger = logging.getLogger(__name__)
 
 
-# Node Functions
+# Node Factory Functions - creates nodes with store captured in closure
 
-def retrieve_features_node(state: AgentState) -> AgentState:
-    """Node: Retrieve user features from the feature store."""
-    user_id = state["user_id"]
+def create_retrieve_features_node(store):
+    """Factory function to create retrieve_features_node with store injected."""
     
-    logger.info(f"[Agent] Retrieving features for user {user_id}")
+    async def retrieve_features_node(state: AgentState) -> AgentState:
+        """Node: Retrieve user features from the LangGraph Store."""
+        user_id = state["user_id"]
+        
+        logger.info(f"[Agent] Retrieving features for user {user_id} via LangGraph Store")
+        
+        try:
+            # Use the LangGraph Store to retrieve features
+            features, freshness = await retrieve_all_user_features_async(store, user_id)
+            
+            state["user_features"] = features
+            state["feature_freshness"] = freshness
+            state["current_step"] = "features_retrieved"
+            
+            # Add reasoning to messages
+            feature_summary = f"Retrieved {len(features)} features for user {user_id}"
+            state["messages"].append(
+                AIMessage(content=f"[Feature Retrieval] {feature_summary}. Feature freshness: {freshness}")
+            )
+            
+            logger.info(f"[Agent] {feature_summary}")
+            
+        except Exception as e:
+            state["error"] = f"Feature retrieval failed: {str(e)}"
+            state["current_step"] = "error"
+            logger.error(f"[Agent] Feature retrieval error: {e}")
+        
+        return state
     
-    try:
-        result = retrieve_user_features_tool.invoke({"user_id": user_id})
-        features = result.get("features", {})
-        freshness = result.get("freshness", "")
-        
-        state["user_features"] = features
-        state["feature_freshness"] = freshness
-        state["current_step"] = "features_retrieved"
-        
-        # Add reasoning to messages
-        feature_summary = f"Retrieved {len(features)} features for user {user_id}"
-        state["messages"].append(
-            AIMessage(content=f"[Feature Retrieval] {feature_summary}. Feature freshness: {freshness}")
-        )
-        
-        logger.info(f"[Agent] {feature_summary}")
-        
-    except Exception as e:
-        state["error"] = f"Feature retrieval failed: {str(e)}"
-        state["current_step"] = "error"
-        logger.error(f"[Agent] Feature retrieval error: {e}")
-    
-    return state
+    return retrieve_features_node
 
 
 def predict_churn_node(state: AgentState) -> AgentState:
@@ -297,20 +301,33 @@ def should_continue_after_generation(state: AgentState) -> str:
 
 # Graph Builder
 
-def create_churn_prediction_graph(checkpointer=None) -> StateGraph:
+def create_churn_prediction_graph(checkpointer=None, store=None) -> StateGraph:
     """
     Create the LangGraph for churn prediction workflow.
     
     Args:
         checkpointer: Optional checkpointer for state persistence
+        store: Optional LangGraph Store for feature retrieval
         
     Returns:
         Compiled StateGraph
     """
     builder = StateGraph(AgentState)
     
+    # Create retrieve_features_node with store injected via factory
+    # If no store provided, the node will fail gracefully with an error
+    if store:
+        retrieve_node = create_retrieve_features_node(store)
+    else:
+        # Fallback: create a node that reports store not available
+        async def retrieve_node(state: AgentState) -> AgentState:
+            state["error"] = "LangGraph Store not configured - cannot retrieve features"
+            state["current_step"] = "error"
+            logger.error("[Agent] Store not configured for feature retrieval")
+            return state
+    
     # Add nodes
-    builder.add_node("retrieve_features", retrieve_features_node)
+    builder.add_node("retrieve_features", retrieve_node)
     builder.add_node("predict_churn", predict_churn_node)
     builder.add_node("decide_nudge", decide_nudge_node)
     builder.add_node("generate_nudge", generate_nudge_node)
@@ -362,28 +379,31 @@ def create_churn_prediction_graph(checkpointer=None) -> StateGraph:
     builder.add_edge("send_nudge", END)
     builder.add_edge("error_handler", END)
     
-    # Compile with checkpointer
+    # Compile with checkpointer (store is already injected into the node)
+    compile_kwargs = {}
     if checkpointer:
-        graph = builder.compile(checkpointer=checkpointer)
-    else:
-        graph = builder.compile()
+        compile_kwargs["checkpointer"] = checkpointer
     
-    logger.info("Churn prediction graph compiled")
+    graph = builder.compile(**compile_kwargs)
+    
+    logger.info(f"Churn prediction graph compiled (checkpointer: {checkpointer is not None}, store: {store is not None})")
     return graph
 
 
 async def run_agent_prediction(
     user_id: str,
     aerospike_client=None,
-    use_checkpointer: bool = True
+    use_checkpointer: bool = True,
+    use_store: bool = True
 ) -> Dict[str, Any]:
     """
     Run the agent-based churn prediction workflow.
     
     Args:
         user_id: The user to predict churn for
-        aerospike_client: Optional Aerospike client for checkpointing
+        aerospike_client: Optional Aerospike client for checkpointing and store
         use_checkpointer: Whether to use checkpointing
+        use_store: Whether to use LangGraph Store for feature retrieval
         
     Returns:
         Dictionary containing prediction results and nudge information
@@ -397,8 +417,17 @@ async def run_agent_prediction(
         except Exception as e:
             logger.warning(f"Could not create checkpointer: {e}")
     
-    # Create the graph
-    graph = create_churn_prediction_graph(checkpointer=checkpointer)
+    # Get or create store for feature retrieval
+    store = None
+    if use_store and aerospike_client:
+        try:
+            store = get_aerospike_store(client=aerospike_client)
+            logger.info("Aerospike store enabled for feature retrieval")
+        except Exception as e:
+            logger.warning(f"Could not create store: {e}")
+    
+    # Create the graph with both checkpointer and store
+    graph = create_churn_prediction_graph(checkpointer=checkpointer, store=store)
     
     # Create initial state
     initial_state = create_initial_state(user_id)

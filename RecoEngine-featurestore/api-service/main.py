@@ -18,13 +18,21 @@ from config import settings
 
 # Agent flow toggle - set USE_AGENT_FLOW=true to use LangGraph agent
 USE_AGENT_FLOW = os.getenv("USE_AGENT_FLOW", "false").lower() == "true"
+# Store toggle - set USE_LANGGRAPH_STORE=true to use LangGraph Store for feature retrieval
+USE_LANGGRAPH_STORE = os.getenv("USE_LANGGRAPH_STORE", "true").lower() == "true"
 AGENT_IMPORT_ERROR = None
 
 # Agent imports (only loaded when needed) - Requires Python 3.10+ and LangGraph 1.0+
 if USE_AGENT_FLOW:
     try:
         from agent import run_agent_prediction, get_aerospike_saver, configure_tools as configure_agent_tools
+        from agent.store_helper import (
+            get_aerospike_store, 
+            store_user_features as store_via_langgraph,
+            retrieve_all_user_features as retrieve_via_langgraph
+        )
         print("Agent module loaded successfully (LangGraph 1.0+, Python 3.10+)")
+        print(f"LangGraph Store: {'enabled' if USE_LANGGRAPH_STORE else 'disabled'}")
     except ImportError as e:
         AGENT_IMPORT_ERROR = str(e)
         print(f"Agent module import failed: {e}")
@@ -61,6 +69,14 @@ async def lifespan(app: FastAPI):
             namespace=AEROSPIKE_NAMESPACE
         )
         logger.info("✅ Agent tools configured successfully")
+        
+        # Initialize LangGraph Store if enabled
+        if USE_LANGGRAPH_STORE and client:
+            try:
+                store = get_aerospike_store(client=client, namespace=AEROSPIKE_NAMESPACE)
+                logger.info("📦 LangGraph Store initialized for feature retrieval")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not initialize LangGraph Store: {e}")
     else:
         logger.info("📋 Manual flow ENABLED - using step-by-step processing")
     
@@ -201,10 +217,27 @@ class CustomMessageResponse(BaseModel):
 
 # Helper functions
 def store_features_in_aerospike(user_id: str, features: Dict[str, Any], feature_type: str):
-    """Store features in Aerospike with proper key structure - merges with existing features"""
+    """Store features in Aerospike using LangGraph Store API.
+    
+    Data format:
+    - namespace: ("user_features", feature_type)
+    - key: user_id
+    - value: {features..., timestamp, feature_type}
+    """
     global client
     
-    # Try to reconnect if client is None
+    # Use LangGraph Store API when enabled
+    if USE_AGENT_FLOW and USE_LANGGRAPH_STORE:
+        try:
+            store = get_aerospike_store(client=client, namespace=AEROSPIKE_NAMESPACE)
+            store_via_langgraph(store, user_id, features, feature_type)
+            logger.info(f"Stored {feature_type} features for user {user_id} via LangGraph Store API")
+            return
+        except Exception as e:
+            logger.error(f"Error storing features via Store API for user {user_id}: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to store features: {str(e)}")
+    
+    # Fallback to direct Aerospike client (when Store API is disabled)
     if client is None:
         if not connect_aerospike():
             raise HTTPException(status_code=503, detail="Aerospike not available")
@@ -215,12 +248,10 @@ def store_features_in_aerospike(user_id: str, features: Dict[str, Any], feature_
         key_name = user_id + "_" + feature_type
         key = (namespace, set_name, key_name)
         
-        # Retrieve existing features to merge with new ones
         existing_features = {}
         try:
             (key, metadata, bins) = client.get(key)
             if bins:
-                # Extract existing features (excluding metadata)
                 existing_features = {k: v for k, v in bins.items() if k not in ["timestamp", "feature_type"]}
                 logger.info(f"Found existing {feature_type} features for user {user_id}, merging with new features")
         except aerospike.exception.RecordNotFound:
@@ -228,7 +259,6 @@ def store_features_in_aerospike(user_id: str, features: Dict[str, Any], feature_
         except Exception as e:
             logger.warning(f"Error retrieving existing features for user {user_id}: {e}")
         
-        # Merge existing features with new features (new features override existing ones)
         merged_features = {**existing_features, **features}
         
         features_with_timestamp = {
@@ -238,18 +268,34 @@ def store_features_in_aerospike(user_id: str, features: Dict[str, Any], feature_
         }
         
         client.put(key, features_with_timestamp)
-        logger.info(f"Stored {feature_type} features for user {user_id} (merged {len(existing_features)} existing + {len(features)} new = {len(merged_features)} total)")
+        logger.info(f"Stored {feature_type} features for user {user_id} (direct client)")
     except Exception as e:
         logger.error(f"Error storing features for user {user_id}: {str(e)}")
-        # Try to reconnect on error
         client = None
         raise HTTPException(status_code=500, detail=f"Failed to store features: {str(e)}")
 
 def retrieve_all_features(user_id: str) -> Dict[str, Any]:
-    """Retrieve all feature types for a user from Aerospike"""
+    """Retrieve all feature types for a user from Aerospike using LangGraph Store API.
+    
+    Data format expected:
+    - namespace: ("user_features", feature_type)
+    - key: user_id
+    - value: {features..., timestamp, feature_type}
+    """
     global client
     
-    # Try to reconnect if client is None
+    # Use LangGraph Store API when enabled
+    if USE_AGENT_FLOW and USE_LANGGRAPH_STORE:
+        try:
+            store = get_aerospike_store(client=client, namespace=AEROSPIKE_NAMESPACE)
+            all_features, feature_freshness = retrieve_via_langgraph(store, user_id)
+            logger.info(f"Retrieved {len(all_features)} features for user {user_id} via LangGraph Store API")
+            return all_features, feature_freshness
+        except Exception as e:
+            logger.error(f"Error retrieving features via Store API for user {user_id}: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve features: {str(e)}")
+    
+    # Fallback to direct Aerospike client (when Store API is disabled)
     if client is None:
         if not connect_aerospike():
             raise HTTPException(status_code=503, detail="Aerospike not available")
@@ -266,7 +312,6 @@ def retrieve_all_features(user_id: str) -> Dict[str, Any]:
             key = (namespace, set_name, key_name)
             (key, metadata, bins) = client.get(key)
             if bins:
-                # Remove metadata fields and merge features
                 features = {k: v for k, v in bins.items() if k not in ["timestamp", "feature_type"]}
                 all_features.update(features)
                 if not feature_freshness or bins.get("timestamp", "") > feature_freshness:
@@ -275,7 +320,6 @@ def retrieve_all_features(user_id: str) -> Dict[str, Any]:
             logger.warning(f"No {feature_type} features found for user {user_id}")
         except Exception as e:
             logger.error(f"Error retrieving {feature_type} features for user {user_id}: {str(e)}")
-            # Try to reconnect on error
             client = None
     
     return all_features, feature_freshness or datetime.utcnow().isoformat()
@@ -419,7 +463,12 @@ async def test_predict_flow(
                 raise HTTPException(status_code=500, detail=f"Agent module not available: {str(e)}")
             
             step_start = time.time()
-            agent_result = await agent_predict(user_id=user_id, aerospike_client=client, use_checkpointer=True)
+            agent_result = await agent_predict(
+                user_id=user_id, 
+                aerospike_client=client, 
+                use_checkpointer=True,
+                use_store=USE_LANGGRAPH_STORE
+            )
             debug_info["timing"]["agent_execution"] = f"{(time.time() - step_start)*1000:.2f}ms"
             
             if verbose and agent_result.get("agent_reasoning"):
@@ -515,16 +564,17 @@ async def predict_churn(user_id: str) -> ChurnPredictionResponse:
     """
     
     # =========================================================================
-    # AGENT FLOW: Use LangGraph agent with checkpointing
+    # AGENT FLOW: Use LangGraph agent with checkpointing and store
     # =========================================================================
     if USE_AGENT_FLOW:
-        logger.info(f"🤖 Using AGENT flow for user {user_id}")
+        logger.info(f"🤖 Using AGENT flow for user {user_id} (store: {USE_LANGGRAPH_STORE})")
         try:
             # Run the agent-based prediction workflow
             agent_result = await run_agent_prediction(
                 user_id=user_id,
                 aerospike_client=client,
-                use_checkpointer=True
+                use_checkpointer=True,
+                use_store=USE_LANGGRAPH_STORE
             )
             
             # Check for errors
@@ -703,7 +753,8 @@ async def health_check():
         agent_status = {
             "enabled": USE_AGENT_FLOW,
             "flow_mode": "agent" if USE_AGENT_FLOW else "manual",
-            "checkpointer": "aerospike" if USE_AGENT_FLOW else "none"
+            "checkpointer": "aerospike" if USE_AGENT_FLOW else "none",
+            "store": "aerospike" if (USE_AGENT_FLOW and USE_LANGGRAPH_STORE) else "none"
         }
         
         return {
@@ -727,10 +778,15 @@ async def get_agent_status():
     return {
         "agent_flow_enabled": USE_AGENT_FLOW,
         "flow_mode": "agent" if USE_AGENT_FLOW else "manual",
-       
         "checkpointer": {
             "type": "AerospikeSaver" if USE_AGENT_FLOW else "none",
             "namespace": AEROSPIKE_NAMESPACE if USE_AGENT_FLOW else None
+        },
+        "store": {
+            "enabled": USE_LANGGRAPH_STORE if USE_AGENT_FLOW else False,
+            "type": "AerospikeStore" if (USE_AGENT_FLOW and USE_LANGGRAPH_STORE) else "none",
+            "namespace": AEROSPIKE_NAMESPACE if (USE_AGENT_FLOW and USE_LANGGRAPH_STORE) else None,
+            "set": "user_features" if (USE_AGENT_FLOW and USE_LANGGRAPH_STORE) else None
         }
     }
 
