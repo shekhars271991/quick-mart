@@ -39,11 +39,31 @@ from .tools import (
     send_nudge_tool,
     configure_tools,
 )
+# Recommendations graph
+from .reco_state import RecommendationState, create_initial_reco_state, DISCOUNT_TIERS
+from .reco_graph import create_recommendations_graph, run_recommendations_workflow
+from .product_indexer import (
+    index_products_in_store,
+    search_similar_products,
+    check_products_indexed,
+)
+# Graph logging
+from .graph_logger import setup_graph_loggers, get_churn_logger, get_reco_logger
 
 __all__ = [
-    # Graph and workflow
+    # Churn Graph and workflow
     "create_churn_prediction_graph",
     "run_agent_prediction",
+    # Recommendations Graph and workflow
+    "create_recommendations_graph",
+    "run_recommendations_workflow",
+    "RecommendationState",
+    "create_initial_reco_state",
+    "DISCOUNT_TIERS",
+    # Product indexing
+    "index_products_in_store",
+    "search_similar_products",
+    "check_products_indexed",
     # Checkpointer
     "get_aerospike_saver",
     # Store

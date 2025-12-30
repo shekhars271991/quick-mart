@@ -55,6 +55,7 @@ aerospike_logs/
 *.log
 QuickMart-backend/logs/
 RecoEngine-featurestore/logs/
+RecoEngine-featurestore/api-service/logs/
 Quickmart-frontend/logs/
 
 # === Model Files (Large) ===

@@ -23,7 +23,7 @@ auth_router = APIRouter()
 RECO_ENGINE_BASE_URL = os.getenv("RECO_ENGINE_URL", "http://localhost:8001")
 
 async def trigger_churn_prediction(user_id: str) -> dict:
-    """Trigger churn prediction for user after login"""
+    """Trigger churn prediction for user (called on cart load)"""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             url = f"{RECO_ENGINE_BASE_URL}/predict/{user_id}"
@@ -54,6 +54,8 @@ async def trigger_churn_prediction(user_id: str) -> dict:
     except Exception as e:
         logger.warning(f"Churn prediction error for user {user_id}: {e}")
         return None
+
+
 
 @auth_router.post("/register", response_model=UserResponse)
 async def register_user(user_data: UserCreate):
@@ -159,10 +161,8 @@ async def login_user(login_data: UserLogin):
         
         logger.info(f"User logged in: {login_data.email}")
         
-        # Trigger churn prediction asynchronously (don't block login response)
-        user_id = user_record["user_id"]
-        asyncio.create_task(trigger_churn_prediction(user_id))
-        logger.info(f"Triggered async churn prediction for user {user_id}")
+        # Note: Recommendations are fetched by frontend directly from RecoEngine
+        # No background task needed here
         
         # Prepare response
         response_data = {

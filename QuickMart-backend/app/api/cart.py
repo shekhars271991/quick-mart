@@ -4,10 +4,13 @@ Tracks cart operations and updates user features for churn prediction
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import logging
 from datetime import datetime
+import httpx
+import asyncio
+import os
 
 from core.database import database_manager
 from core.auth import get_current_user
@@ -16,6 +19,9 @@ from services.reco_integration import reco_service
 logger = logging.getLogger(__name__)
 
 cart_router = APIRouter()
+
+# RecoEngine configuration
+RECO_ENGINE_BASE_URL = os.getenv("RECO_ENGINE_URL", "http://localhost:8001")
 
 # Request/Response models
 class CartItemRequest(BaseModel):
@@ -35,13 +41,8 @@ async def add_to_cart(
     try:
         user_id = current_user["user_id"]
         
-        # Verify product exists
-        products = await database_manager.scan_set("products")
-        product = None
-        for p in products:
-            if p.get("product_id") == request.product_id:
-                product = p
-                break
+        # Verify product exists (from LangGraph Store format)
+        product = await database_manager.get_from_store("products", "products", request.product_id)
         
         if not product:
             raise HTTPException(
@@ -196,5 +197,129 @@ async def get_cart(current_user: dict = Depends(get_current_user)):
     return {
         "message": "Cart is managed on frontend",
         "user_id": current_user["user_id"]
+    }
+
+
+class CartLoadRequest(BaseModel):
+    """Request model for cart page load event."""
+    cart_items: Optional[List[Dict[str, Any]]] = None
+    cart_total: Optional[float] = None
+
+
+class ChurnPredictionResult(BaseModel):
+    """Response model for churn prediction."""
+    churn_probability: float
+    risk_segment: str
+    nudges_triggered: Optional[List[Dict[str, Any]]] = None
+
+
+async def trigger_churn_prediction(user_id: str) -> dict:
+    """Trigger churn prediction for user on cart load."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            url = f"{RECO_ENGINE_BASE_URL}/predict/{user_id}"
+            response = await client.post(url)
+            
+            if response.status_code == 200:
+                prediction_data = response.json()
+                logger.info(f"Churn prediction on cart load for user {user_id}: risk_segment={prediction_data.get('risk_segment', 'unknown')}")
+                
+                # Log nudges if any were triggered
+                if prediction_data.get('nudges_triggered'):
+                    nudge_count = len(prediction_data['nudges_triggered'])
+                    logger.info(f"Triggered {nudge_count} nudges for user {user_id} on cart view")
+                    
+                    # Check if discount coupon was created
+                    has_discount = any(nudge.get('type') == 'Discount Coupon' for nudge in prediction_data['nudges_triggered'])
+                    if has_discount:
+                        logger.info(f"Discount coupon created for high-risk user {user_id} viewing cart")
+                
+                return prediction_data
+            else:
+                logger.warning(f"Churn prediction failed for user {user_id}: {response.status_code} - {response.text}")
+                return None
+                
+    except httpx.TimeoutException:
+        logger.warning(f"Churn prediction timeout for user {user_id}")
+        return None
+    except Exception as e:
+        logger.warning(f"Churn prediction error for user {user_id}: {e}")
+        return None
+
+
+@cart_router.post("/load")
+async def on_cart_load(
+    request: Optional[CartLoadRequest] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Notify backend when cart page is loaded.
+    
+    This triggers churn prediction for the user, which may:
+    - Generate personalized nudges
+    - Create discount coupons for high-risk users
+    - Update user engagement signals
+    
+    This endpoint should be called by the frontend when:
+    - User navigates to cart page
+    - Cart is re-rendered/refreshed
+    """
+    user_id = current_user["user_id"]
+    logger.info(f"Cart page loaded for user {user_id}")
+    
+    # Update realtime features if cart items provided
+    if request and request.cart_items:
+        try:
+            cart_item_details = []
+            for item in request.cart_items[:5]:  # Max 5 items
+                cart_item_details.append({
+                    "product_id": item.get("product_id", ""),
+                    "name": item.get("name", ""),
+                    "category": item.get("category", ""),
+                    "price": item.get("price", 0),
+                    "quantity": item.get("quantity", 1)
+                })
+            
+            realtime_features = {
+                "cart_items": cart_item_details,
+                "cart_item_cnt": len(request.cart_items),
+                "cart_no_buy": True  # Flag that user has items but hasn't bought
+            }
+            
+            await reco_service.ingest_realtime_features(user_id, realtime_features)
+            logger.info(f"Updated cart context for user {user_id}: {len(cart_item_details)} items")
+            
+        except Exception as e:
+            logger.warning(f"Failed to update cart context for user {user_id}: {e}")
+    
+    # Trigger churn prediction asynchronously
+    # Don't wait for it - let it complete in background
+    prediction_task = asyncio.create_task(trigger_churn_prediction(user_id))
+    
+    # Wait briefly for result (optional - for immediate response)
+    try:
+        prediction = await asyncio.wait_for(prediction_task, timeout=3.0)
+        
+        if prediction:
+            return {
+                "status": "success",
+                "user_id": user_id,
+                "churn_prediction": ChurnPredictionResult(
+                    churn_probability=prediction.get("churn_probability", 0),
+                    risk_segment=prediction.get("risk_segment", "unknown"),
+                    nudges_triggered=prediction.get("nudges_triggered")
+                )
+            }
+    except asyncio.TimeoutError:
+        # Prediction still running in background, return partial response
+        logger.info(f"Churn prediction still running for user {user_id}, returning early")
+    except Exception as e:
+        logger.warning(f"Error waiting for churn prediction: {e}")
+    
+    return {
+        "status": "success",
+        "user_id": user_id,
+        "churn_prediction": None,
+        "message": "Cart load recorded, churn prediction triggered"
     }
 

@@ -22,6 +22,9 @@ langchain-core>=0.3.0
 langchain-google-genai>=2.0.0
 google-generativeai>=0.3.0
 
+# Embeddings for vector search
+sentence-transformers>=2.2.0
+
 # LangGraph for agent workflows (required when USE_AGENT_FLOW=true)
 langgraph>=0.2.0
 langgraph-checkpoint>=2.0.0

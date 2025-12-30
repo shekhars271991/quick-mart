@@ -106,62 +106,17 @@ async def load_all_data():
             logger.error(f"Failed to load categories: {e}")
             results["errors"].append(f"Categories loading failed: {str(e)}")
         
-        # Load Products
+        # Load Products - delegate to load_products() to use LangGraph Store
         try:
-            products_file = data_dir / "products.json"
-            if products_file.exists():
-                with open(products_file, 'r', encoding='utf-8') as f:
-                    products_data = json.load(f)
-                
-                logger.info(f"Loading {len(products_data)} products")
-                loaded_products = []
-                
-                for i, product_data in enumerate(products_data):
-                    product_id = f"prod_{str(i+1).zfill(3)}"
-                    
-                    # Calculate discount percentage
-                    discount_percentage = 0
-                    if product_data.get("original_price"):
-                        discount_percentage = round(
-                            ((product_data["original_price"] - product_data["price"]) / product_data["original_price"]) * 100, 1
-                        )
-                    
-                    product = Product(
-                        product_id=product_id,
-                        name=product_data["name"],
-                        description=product_data["description"],
-                        category=product_data["category"],
-                        subcategory=product_data.get("subcategory"),
-                        price=product_data["price"],
-                        original_price=product_data.get("original_price"),
-                        discount_percentage=discount_percentage,
-                        brand=product_data["brand"],
-                        images=[product_data["image"]] if product_data.get("image") else [],
-                        specifications=product_data.get("specifications", {}),
-                        stock_quantity=product_data["stock_quantity"],
-                        rating=product_data.get("rating", 0.0),
-                        review_count=product_data.get("review_count", 0),
-                        tags=product_data.get("tags", []),
-                        is_featured=product_data.get("is_featured", False),
-                        is_active=True,
-                        created_at=datetime.utcnow(),
-                        updated_at=datetime.utcnow()
-                    )
-                    
-                    success = await database_manager.put("products", product_id, product.dict())
-                    if success:
-                        loaded_products.append(product_id)
-                
-                results["products"] = {
-                    "loaded": len(loaded_products),
-                    "total": len(products_data),
-                    "success": True,
-                    "items": loaded_products
-                }
-                logger.info(f"✅ Loaded {len(loaded_products)} products")
-            else:
-                results["errors"].append("Products file not found")
-                
+            products_result = await load_products()
+            results["products"] = {
+                "loaded": products_result.get("loaded_products", 0),
+                "total": products_result.get("total_products", 0),
+                "success": True,
+                "items": products_result.get("products", []),
+                "vector_index": products_result.get("vector_index")
+            }
+            logger.info(f"✅ Loaded products via load_products()")
         except Exception as e:
             logger.error(f"Failed to load products: {e}")
             results["errors"].append(f"Products loading failed: {str(e)}")
@@ -472,19 +427,67 @@ async def load_products():
                 updated_at=datetime.utcnow()
             )
             
-            # Store in Aerospike
-            success = await database_manager.put("products", product_id, product.dict())
-            if success:
-                loaded_products.append(product_id)
-                logger.info(f"Loaded product: {product_id}")
-            else:
-                logger.error(f"Failed to load product: {product_id}")
+            # Products are stored via RecoEngine in LangGraph Store format
+            # (with embeddings for vector search)
+            loaded_products.append(product_id)
+            logger.info(f"Prepared product: {product_id}")
+        
+        # Store products in RecoEngine (LangGraph Store with embeddings)
+        # This is the single source of truth for products
+        index_result = None
+        try:
+            # Prepare products for RecoEngine with all fields needed
+            products_for_indexing = []
+            for i, product_data in enumerate(products_data):
+                product_id = f"prod_{str(i+1).zfill(3)}"
+                
+                # Calculate discount percentage if we have original_price
+                discount_percentage = 0
+                if product_data.get("original_price") and product_data.get("original_price") > product_data["price"]:
+                    discount_percentage = round(
+                        ((product_data["original_price"] - product_data["price"]) / product_data["original_price"]) * 100
+                    )
+                
+                products_for_indexing.append({
+                    "product_id": product_id,
+                    "name": product_data["name"],
+                    "description": product_data["description"],
+                    "category": product_data["category"],
+                    "subcategory": product_data.get("subcategory"),
+                    "brand": product_data["brand"],
+                    "price": product_data["price"],
+                    "original_price": product_data.get("original_price"),
+                    "discount_percentage": discount_percentage,
+                    "rating": product_data.get("rating", 0.0),
+                    "review_count": product_data.get("review_count", 0),
+                    "stock_quantity": product_data["stock_quantity"],
+                    "tags": product_data.get("tags", []),
+                    "image": product_data.get("image"),
+                    "images": [product_data["image"]] if product_data.get("image") else [],
+                    "specifications": product_data.get("specifications", {}),
+                    "is_featured": product_data.get("is_featured", False),
+                    "is_active": True
+                })
+            
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(
+                    f"{RECO_ENGINE_BASE_URL}/recommendations/index",
+                    json={"products": products_for_indexing}
+                )
+                if response.status_code == 200:
+                    index_result = response.json()
+                    logger.info(f"✅ Products stored in LangGraph Store: {index_result.get('products_indexed', 0)} products")
+                else:
+                    logger.warning(f"⚠️ Product storage returned {response.status_code}: {response.text}")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not store products: {e}")
         
         return {
             "message": "Products loaded successfully",
             "total_products": len(products_data),
             "loaded_products": len(loaded_products),
-            "products": loaded_products
+            "products": loaded_products,
+            "vector_index": index_result
         }
         
     except FileNotFoundError:
@@ -509,9 +512,10 @@ async def load_products():
 
 @admin_router.get("/products")
 async def get_products():
-    """Get all products from Aerospike"""
+    """Get all products from LangGraph Store"""
     try:
-        products = await database_manager.scan_set("products")
+        # Read from LangGraph Store format (products namespace)
+        products = await database_manager.scan_store_set("products", "products")
         return {
             "message": "Products retrieved successfully",
             "count": len(products),

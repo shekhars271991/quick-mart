@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Optional, Any
 import aerospike
@@ -30,6 +31,12 @@ if USE_AGENT_FLOW:
             get_aerospike_store, 
             store_user_features as store_via_langgraph,
             retrieve_all_user_features as retrieve_via_langgraph
+        )
+        # Recommendations graph imports
+        from agent import (
+            run_recommendations_workflow,
+            index_products_in_store,
+            check_products_indexed,
         )
         print("Agent module loaded successfully (LangGraph 1.0+, Python 3.10+)")
         print(f"LangGraph Store: {'enabled' if USE_LANGGRAPH_STORE else 'disabled'}")
@@ -77,6 +84,63 @@ async def lifespan(app: FastAPI):
                 logger.info("📦 LangGraph Store initialized for feature retrieval")
             except Exception as e:
                 logger.warning(f"⚠️ Could not initialize LangGraph Store: {e}")
+        
+        # Initialize recommendation store with embeddings for vector search
+        global reco_store, products_indexed
+        try:
+            from sentence_transformers import SentenceTransformer
+            from langgraph.store.aerospike import AerospikeStore
+            
+            # Load embedding model
+            logger.info("🔄 Loading embedding model for product recommendations...")
+            embedding_model = SentenceTransformer('all-MiniLM-L6-v2')  # 384 dimensions
+            
+            # Create embeddings wrapper for LangGraph Store
+            # Must have embed_documents and embed_query methods
+            class STEmbeddings:
+                def __init__(self, model):
+                    self.model = model
+                
+                def embed_documents(self, texts: list[str]) -> list[list[float]]:
+                    """Embed a list of documents."""
+                    return self.model.encode(texts).tolist()
+                
+                def embed_query(self, text: str) -> list[float]:
+                    """Embed a single query text."""
+                    return self.model.encode(text).tolist()
+                
+                # Make it callable for ensure_embeddings compatibility
+                def __call__(self, text: str) -> list[float]:
+                    """Allow calling as a function."""
+                    return self.embed_query(text)
+            
+            embeddings = STEmbeddings(embedding_model)
+            
+            # Create store with vector search config
+            reco_store = AerospikeStore(
+                client=client,
+                namespace=AEROSPIKE_NAMESPACE,
+                set="products",  # Aerospike set name
+                index_config={
+                    "embed": embeddings,
+                    "vector_dims": 384,  # all-MiniLM-L6-v2 dimensions
+                    "fields": ["embedding_text"]
+                }
+            )
+            
+            logger.info("✅ Recommendation store initialized with vector search")
+            
+            # Check if products are already indexed
+            products_indexed = await check_products_indexed(reco_store)
+            if products_indexed:
+                logger.info("✅ Products already indexed in store")
+            else:
+                logger.info("📦 Products not indexed yet. They will be indexed when QuickMart's /api/admin/load-products is called.")
+                
+        except ImportError as e:
+            logger.warning(f"⚠️ Could not initialize embeddings (install sentence-transformers): {e}")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not initialize recommendation store: {e}")
     else:
         logger.info("📋 Manual flow ENABLED - using step-by-step processing")
     
@@ -85,6 +149,15 @@ async def lifespan(app: FastAPI):
     pass
 
 app = FastAPI(title="Churn Prediction API", version="1.0.0", lifespan=lifespan)
+
+# Add CORS middleware to allow frontend access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configuration from settings
 AEROSPIKE_HOST = settings.AEROSPIKE_HOST
@@ -95,6 +168,10 @@ MODEL_SERVICE_URL = os.getenv("MODEL_SERVICE_URL", "http://localhost:8001")
 
 # Aerospike client (will be initialized on startup)
 client = None
+
+# Global store instance for vector search (with embeddings)
+reco_store = None
+products_indexed = False
 
 def connect_aerospike():
     """Connect to Aerospike with retry logic"""
@@ -699,6 +776,233 @@ async def predict_churn(user_id: str) -> ChurnPredictionResponse:
     except Exception as e:
         logger.error(f"Error predicting churn for user {user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+
+# ==================== Recommendations Endpoints ====================
+
+class RecommendationRequest(BaseModel):
+    """Request model for triggering recommendations."""
+    cart_items: Optional[List[Dict[str, Any]]] = None
+
+
+class RecommendedProductResponse(BaseModel):
+    """Response model for a recommended product."""
+    product_id: str
+    name: str
+    description: str
+    category: str
+    brand: str
+    price: float
+    original_price: Optional[float] = None
+    discounted_price: float
+    discount_percentage: int
+    rating: float
+    review_count: int
+    image: Optional[str] = None
+    similarity_score: float
+    recommendation_reason: str
+
+
+class RecommendationsResponse(BaseModel):
+    """Response model for recommendations."""
+    user_id: str
+    recommendations: List[RecommendedProductResponse]
+    churn_risk: str
+    churn_probability: float
+    generated_at: str
+    source: str  # "cached" or "generated"
+
+
+# NOTE: Static routes MUST come before dynamic {user_id} routes in FastAPI
+
+class ProductIndexRequest(BaseModel):
+    """Request model for indexing products."""
+    products: Optional[List[Dict[str, Any]]] = None
+
+
+@app.post("/recommendations/index")
+async def index_products(request: Optional[ProductIndexRequest] = None):
+    """
+    Index products for vector search.
+    
+    Products can be:
+    1. Passed directly in the request body (preferred)
+    2. Fetched from QuickMart backend (fallback, requires public endpoint)
+    
+    This endpoint is automatically called by QuickMart's /api/admin/load-products.
+    """
+    global reco_store, products_indexed
+    
+    if not USE_AGENT_FLOW or reco_store is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Recommendation store not available"
+        )
+    
+    try:
+        logger.info("📦 Starting product indexing...")
+        
+        # Use provided products or fetch from backend
+        products = request.products if request and request.products else None
+        
+        indexed_count = await index_products_in_store(reco_store, products)
+        
+        if indexed_count > 0:
+            products_indexed = True
+            logger.info(f"✅ Successfully indexed {indexed_count} products")
+            return {
+                "status": "success",
+                "products_indexed": indexed_count,
+                "message": f"Indexed {indexed_count} products for vector search"
+            }
+        else:
+            return {
+                "status": "warning",
+                "products_indexed": 0,
+                "message": "No products found to index."
+            }
+            
+    except Exception as e:
+        logger.error(f"Error indexing products: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Product indexing failed: {str(e)}")
+
+
+@app.get("/recommendations/status")
+async def get_recommendations_status():
+    """Get recommendations system status."""
+    return {
+        "enabled": USE_AGENT_FLOW and reco_store is not None,
+        "store_initialized": reco_store is not None,
+        "products_indexed": products_indexed,
+        "embedding_model": "all-MiniLM-L6-v2" if reco_store else None,
+        "embedding_dimensions": 384 if reco_store else None
+    }
+
+
+@app.post("/recommendations/{user_id}")
+async def trigger_recommendations(
+    user_id: str,
+    request: Optional[RecommendationRequest] = None
+):
+    """
+    Trigger product recommendations for a user (called on login).
+    
+    This runs the recommendations LangGraph workflow which:
+    1. Gets user's cart items
+    2. Retrieves user features
+    3. Estimates churn risk
+    4. Uses vector search to find similar products
+    5. Applies discounts based on churn risk
+    6. Caches recommendations for later retrieval
+    """
+    global reco_store, churn_predictor
+    
+    if not USE_AGENT_FLOW:
+        raise HTTPException(
+            status_code=503, 
+            detail="Agent flow not enabled. Set USE_AGENT_FLOW=true"
+        )
+    
+    if reco_store is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Recommendation store not initialized. Check embeddings setup."
+        )
+    
+    if not products_indexed:
+        raise HTTPException(
+            status_code=503,
+            detail="Products not indexed. Call POST /recommendations/index first."
+        )
+    
+    cart_items = request.cart_items if request else None
+    
+    try:
+        logger.info(f"🎯 Running recommendations workflow for user {user_id}")
+        
+        # Get the user features store (same one used by /ingest endpoints)
+        features_store = get_aerospike_store(client=client, namespace=AEROSPIKE_NAMESPACE)
+        
+        result = await run_recommendations_workflow(
+            user_id=user_id,
+            product_store=reco_store,       # For vector search (set="products")
+            features_store=features_store,   # For user features (set="user_features")
+            churn_predictor=churn_predictor,
+            cart_items=cart_items
+        )
+        
+        if result.get("error"):
+            logger.error(f"Recommendations workflow error: {result['error']}")
+            raise HTTPException(status_code=500, detail=result["error"])
+        
+        recommendations = [
+            RecommendedProductResponse(**r) for r in result.get("recommendations", [])
+        ]
+        
+        return RecommendationsResponse(
+            user_id=user_id,
+            recommendations=recommendations,
+            churn_risk=result.get("churn_risk", "low_risk"),
+            churn_probability=result.get("churn_probability", 0),
+            generated_at=datetime.utcnow().isoformat(),
+            source="generated"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating recommendations for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Recommendations failed: {str(e)}")
+
+
+@app.get("/recommendations/{user_id}")
+async def get_recommendations(user_id: str):
+    """
+    Get cached recommendations for a user.
+    
+    Returns previously generated recommendations from the store.
+    """
+    global reco_store
+    
+    if not USE_AGENT_FLOW or reco_store is None:
+        raise HTTPException(
+            status_code=503, 
+            detail="Recommendation store not available"
+        )
+    
+    try:
+        # Retrieve cached recommendations
+        item = await reco_store.aget(
+            namespace=("user_recommendations",),
+            key=user_id
+        )
+        
+        if item is None or not item.value:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No recommendations found for user {user_id}. Call POST /recommendations/{user_id} first."
+            )
+        
+        data = item.value
+        recommendations = [
+            RecommendedProductResponse(**r) for r in data.get("recommendations", [])
+        ]
+        
+        return RecommendationsResponse(
+            user_id=user_id,
+            recommendations=recommendations,
+            churn_risk=data.get("churn_risk", "low_risk"),
+            churn_probability=data.get("churn_probability", 0),
+            generated_at=data.get("created_at", ""),
+            source="cached"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving recommendations for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get recommendations: {str(e)}")
+
 
 @app.get("/monitoring")
 async def get_monitoring_metrics() -> MonitoringMetrics:

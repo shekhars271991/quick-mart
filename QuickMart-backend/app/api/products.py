@@ -25,12 +25,14 @@ async def get_products(
     max_price: Optional[float] = Query(None, ge=0, description="Maximum price"),
     is_featured: Optional[bool] = Query(None, description="Filter featured products"),
     search: Optional[str] = Query(None, description="Search in name and description"),
+    sort_by: Optional[str] = Query(None, description="Sort field"),
+    sort_order: Optional[str] = Query("asc", description="Sort order"),
     current_user: Optional[dict] = Depends(get_current_user_optional)
 ):
     """Get products with filtering and pagination"""
     try:
-        # Get all products
-        all_products = await database_manager.scan_set("products")
+        # Get all products from LangGraph Store format (products namespace)
+        all_products = await database_manager.scan_store_set("products", "products")
         
         # Filter products
         filtered_products = []
@@ -107,7 +109,8 @@ async def get_product(
 ):
     """Get specific product by ID"""
     try:
-        product_data = await database_manager.get("products", product_id)
+        # Get from LangGraph Store format (products namespace)
+        product_data = await database_manager.get_from_store("products", "products", product_id)
         if not product_data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

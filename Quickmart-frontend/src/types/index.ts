@@ -49,10 +49,23 @@ export interface RegisterData {
     location?: string
 }
 
+export interface Recommendation {
+    product_id: string
+    name: string
+    price: number
+    image?: string
+    category?: string
+    brand?: string
+    discount_percentage?: number
+    similarity_score?: number
+}
+
 export interface AuthResponse {
     access_token: string
     token_type: string
     user: User
+    recommendations?: Recommendation[]
+    churn_risk?: string
     special_offer?: {
         message: string
         type: 'discount_coupon' | 'other'

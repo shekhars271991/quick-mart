@@ -225,11 +225,44 @@ export const usersApi = {
     },
 }
 
+export interface CartItem {
+    product_id: string
+    name: string
+    category?: string
+    price: number
+    quantity: number
+}
+
+export interface ChurnPrediction {
+    churn_probability: number
+    risk_segment: string
+    nudges_triggered?: any[]
+}
+
+export interface CartLoadResponse {
+    status: string
+    user_id: string
+    churn_prediction: ChurnPrediction | null
+    message?: string
+}
+
 export const cartApi = {
     addToCart: async (productId: string, quantity: number = 1): Promise<ApiResponse> => {
         const response = await api.post('/api/cart/add', {
             product_id: productId,
             quantity,
+        })
+        return response.data
+    },
+
+    /**
+     * Notify backend when cart page loads.
+     * Triggers churn prediction which may generate nudges/coupons for high-risk users.
+     */
+    notifyCartLoad: async (cartItems?: CartItem[], cartTotal?: number): Promise<CartLoadResponse> => {
+        const response = await api.post('/api/cart/load', {
+            cart_items: cartItems,
+            cart_total: cartTotal,
         })
         return response.data
     },
@@ -247,12 +280,70 @@ export const adminApi = {
     },
 }
 
-// RecoEngine API for churn prediction
+// Recommendation types
+export interface RecommendedProduct {
+    product_id: string
+    name: string
+    description: string
+    category: string
+    brand: string
+    price: number
+    original_price?: number
+    discounted_price: number
+    discount_percentage: number
+    rating: number
+    review_count: number
+    image?: string
+    similarity_score: number
+    recommendation_reason: string
+}
+
+export interface RecommendationsResponse {
+    user_id: string
+    recommendations: RecommendedProduct[]
+    churn_risk: string
+    churn_probability: number
+    generated_at: string
+    source: 'cached' | 'generated'
+}
+
+// RecoEngine API for churn prediction and recommendations
 export const recoEngineApi = {
+    // Default to 8001 for local development (./run.sh local), 8000 for Docker
+    _getBaseUrl: () => (import.meta.env.VITE_RECO_ENGINE_URL as string) || 'http://localhost:8001',
+
     predictChurn: async (userId: string): Promise<any> => {
-        // Default to 8001 for local development (./run.sh local), 8000 for Docker
-        const recoEngineUrl = (import.meta.env.VITE_RECO_ENGINE_URL as string) || 'http://localhost:8001'
+        const recoEngineUrl = recoEngineApi._getBaseUrl()
         const response = await axios.post(`${recoEngineUrl}/predict/${userId}`)
+        return response.data
+    },
+
+    /**
+     * Get personalized product recommendations for a user.
+     * Always generates fresh recommendations (no caching).
+     */
+    getRecommendations: async (userId: string, cartItems?: CartItem[]): Promise<RecommendationsResponse> => {
+        const recoEngineUrl = recoEngineApi._getBaseUrl()
+        // Always use POST to generate fresh recommendations, not cached GET
+        // Longer timeout (30s) since recommendation generation runs LangGraph workflow
+        const response = await axios.post(
+            `${recoEngineUrl}/recommendations/${userId}`,
+            { cart_items: cartItems || [] },
+            { timeout: 30000 }
+        )
+        return response.data
+    },
+
+    /**
+     * Check recommendations system status.
+     */
+    getRecommendationsStatus: async (): Promise<{
+        enabled: boolean
+        store_initialized: boolean
+        products_indexed: boolean
+    }> => {
+        const recoEngineUrl = recoEngineApi._getBaseUrl()
+        const response = await axios.get(`${recoEngineUrl}/recommendations/status`)
         return response.data
     },
 }

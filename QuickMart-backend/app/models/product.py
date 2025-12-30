@@ -42,6 +42,7 @@ class Product(BaseModel):
     original_price: Optional[float] = None
     discount_percentage: float = 0
     brand: str
+    image: Optional[str] = None  # Single image for backward compat
     images: List[str] = []
     specifications: Dict[str, Any] = {}
     stock_quantity: int = 0
@@ -50,12 +51,13 @@ class Product(BaseModel):
     tags: List[str] = []
     is_featured: bool = False
     is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    embedding_text: Optional[str] = None  # For vector search
     
     class Config:
         json_encoders = {
-            datetime: lambda v: v.isoformat()
+            datetime: lambda v: v.isoformat() if v else None
         }
 
 class ProductFilter(BaseModel):

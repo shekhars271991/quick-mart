@@ -1,9 +1,41 @@
 import { ArrowRight, Minus, Plus, ShoppingBag, Sparkles, Trash2, TruckIcon } from 'lucide-react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import RecentCouponDisplay from '../../components/RecentCouponDisplay'
+import { useRecentCoupon } from '../../hooks/useRecentCoupon'
+import { cartApi } from '../../lib/api'
+import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
 
 export default function CartPage() {
     const { items, updateQuantity, removeItem, subtotal, discount, tax, shipping, total, applied_coupon, removeCoupon } = useCartStore()
+    const { isAuthenticated, user } = useAuthStore()
+    const { recentCoupon, loading: couponLoading, refetch: refetchCoupon } = useRecentCoupon()
+
+    // Notify backend when cart page loads (triggers churn prediction which may generate coupons)
+    useEffect(() => {
+        if (isAuthenticated && user?.user_id && items.length > 0) {
+            // Prepare cart items for backend
+            const cartItems = items.map(item => ({
+                product_id: item.product_id,
+                name: item.product.name,
+                category: item.product.category,
+                price: item.product.price,
+                quantity: item.quantity
+            }))
+
+            // Trigger churn prediction - may generate personalized coupon
+            cartApi.notifyCartLoad(cartItems, subtotal)
+                .then(() => {
+                    // After churn prediction completes, refetch coupons to show any new ones
+                    setTimeout(() => refetchCoupon(), 2000) // Wait for coupon generation
+                })
+                .catch(err => {
+                    // Silent fail - this is a background operation
+                    console.log('Cart load notification failed:', err.message)
+                })
+        }
+    }, [isAuthenticated, user?.user_id, items.length, subtotal, refetchCoupon])
 
     if (items.length === 0) {
         return (
@@ -14,8 +46,8 @@ export default function CartPage() {
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-3">Your cart is empty</h2>
                     <p className="text-gray-600 mb-8">Looks like you haven't added anything to your cart yet. Start shopping to discover amazing products!</p>
-                    <Link 
-                        to="/products" 
+                    <Link
+                        to="/products"
                         className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-8 py-4 rounded-xl font-semibold hover:from-primary-700 hover:to-primary-800 transition-all duration-300 shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30"
                     >
                         <ShoppingBag className="w-5 h-5" />
@@ -28,6 +60,13 @@ export default function CartPage() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Personalized Coupon Banner - shows when churn prediction generates an offer */}
+            {isAuthenticated && !couponLoading && recentCoupon && (
+                <div className="mb-6">
+                    <RecentCouponDisplay userCouponWithDetails={recentCoupon} />
+                </div>
+            )}
+
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
@@ -38,8 +77,8 @@ export default function CartPage() {
                 {/* Cart Items */}
                 <div className="lg:col-span-2 space-y-4">
                     {items.map((item, index) => (
-                        <div 
-                            key={item.product_id} 
+                        <div
+                            key={item.product_id}
                             className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300"
                             style={{ animationDelay: `${index * 50}ms` }}
                         >
@@ -73,7 +112,7 @@ export default function CartPage() {
                                         </h3>
                                     </Link>
                                     <p className="text-sm text-gray-500 mt-1">{item.product.brand}</p>
-                                    
+
                                     <div className="flex items-center gap-4 mt-3">
                                         {/* Quantity Controls */}
                                         <div className="flex items-center bg-gray-100 rounded-lg">
@@ -129,7 +168,7 @@ export default function CartPage() {
                                     Add ${(50 - subtotal).toFixed(2)} more for FREE shipping!
                                 </p>
                                 <div className="w-full bg-amber-200 rounded-full h-2 mt-2">
-                                    <div 
+                                    <div
                                         className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-500"
                                         style={{ width: `${Math.min((subtotal / 50) * 100, 100)}%` }}
                                     />

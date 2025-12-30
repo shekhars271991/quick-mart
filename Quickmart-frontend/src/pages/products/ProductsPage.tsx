@@ -1,10 +1,8 @@
-import { ChevronDown, Search, ShoppingBag, Star } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronDown, Clock, Search, ShoppingBag, Sparkles, Star, Tag } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { useQuery } from 'react-query'
 import { Link, useSearchParams } from 'react-router-dom'
-import RecentCouponDisplay from '../../components/RecentCouponDisplay'
-import { useRecentCoupon } from '../../hooks/useRecentCoupon'
-import { productsApi } from '../../lib/api'
+import { productsApi, recoEngineApi, RecommendedProduct } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
 import { getUserDisplayName } from '../../utils/userUtils'
@@ -12,8 +10,7 @@ import { getUserDisplayName } from '../../utils/userUtils'
 export default function ProductsPage() {
     const [searchParams] = useSearchParams()
     const { isAuthenticated, user } = useAuthStore()
-    const { addItem } = useCartStore()
-    const { recentCoupon, loading: couponLoading } = useRecentCoupon()
+    const { addItem, items: cartItems } = useCartStore()
     const [filters, setFilters] = useState({
         category: searchParams.get('category') || '',
         search: searchParams.get('search') || '',
@@ -22,6 +19,10 @@ export default function ProductsPage() {
         sort_by: 'name' as 'name' | 'price' | 'rating' | 'created_at',
         sort_order: 'asc' as 'asc' | 'desc',
     })
+
+    // Track recommendation load time
+    const [recoLoadTime, setRecoLoadTime] = useState<number | null>(null)
+    const recoStartTime = useRef<number | null>(null)
 
     const { data: products, isLoading } = useQuery(
         ['products', filters],
@@ -38,10 +39,56 @@ export default function ProductsPage() {
 
     const { data: categories } = useQuery('categories', productsApi.getCategories)
 
+    // Fetch personalized recommendations from RecoEngine (vector search + churn-based discounts)
+    // Pass cart items to get better recommendations based on current cart
+    const { data: recommendations, isLoading: recoLoading } = useQuery(
+        ['recommendations', user?.user_id, cartItems.length], // Re-fetch when cart changes
+        async () => {
+            if (!user?.user_id) return null
+            console.log('Fetching recommendations for user:', user.user_id, 'with', cartItems.length, 'cart items')
+            recoStartTime.current = Date.now()
+            setRecoLoadTime(null) // Reset on new fetch
+
+            // Transform cart items to the format expected by the API
+            const cartItemsForApi = cartItems.map(item => ({
+                product_id: item.product_id,
+                name: item.product?.name || '',
+                category: item.product?.category || '',
+                brand: item.product?.brand || '',
+                price: item.price,
+                quantity: item.quantity
+            }))
+
+            const result = await recoEngineApi.getRecommendations(user.user_id, cartItemsForApi)
+            const elapsed = Date.now() - recoStartTime.current
+            setRecoLoadTime(elapsed)
+            console.log(`Recommendations loaded in ${elapsed}ms`)
+            return result
+        },
+        {
+            enabled: isAuthenticated && !!user?.user_id,
+            staleTime: 0, // Always consider stale
+            cacheTime: 1000, // Keep in cache for 1 second only (prevents StrictMode double-fetch)
+            refetchOnWindowFocus: false,
+            refetchOnMount: 'always', // Always fetch on mount
+            refetchOnReconnect: false,
+            retry: 2,
+            retryDelay: 2000,
+            onError: (err) => {
+                console.log('Recommendations error:', err)
+                setRecoLoadTime(null)
+            }
+        }
+    )
+
+    // Featured products - fallback for auth users without recommendations, or for non-auth users
     const { data: featuredProducts } = useQuery(
         'featured-products',
         () => productsApi.getProducts({ is_featured: true, limit: 8 }),
-        { enabled: isAuthenticated, staleTime: 5 * 60 * 1000 }
+        {
+            enabled: !isAuthenticated || !recommendations?.recommendations?.length,
+            staleTime: 5 * 60 * 1000
+        }
     )
 
     if (isLoading) {
@@ -62,15 +109,8 @@ export default function ProductsPage() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            {/* Coupon Banner */}
-            {isAuthenticated && !couponLoading && recentCoupon && (
-                <div className="mb-6">
-                    <RecentCouponDisplay userCouponWithDetails={recentCoupon} />
-                </div>
-            )}
-
             {/* Welcome Message */}
-            {isAuthenticated && user && !recentCoupon && (
+            {isAuthenticated && user && (
                 <div className="mb-6">
                     <h1 className="text-xl font-medium text-gray-900">
                         Welcome back, {getUserDisplayName(user)}
@@ -78,11 +118,87 @@ export default function ProductsPage() {
                 </div>
             )}
 
-            {/* Featured Products */}
-            {isAuthenticated && featuredProducts?.items && featuredProducts.items.length > 0 && (
+            {/* AI-Powered Recommendations (from vector search) */}
+            {isAuthenticated && (
                 <section className="mb-10">
                     <div className="flex items-baseline justify-between mb-4">
-                        <h2 className="text-lg font-medium text-gray-900">Recommended for you</h2>
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-amber-500" />
+                            <h2 className="text-lg font-medium text-gray-900">Recommended for you</h2>
+                            {recommendations?.churn_risk && recommendations.churn_risk !== 'low_risk' && (
+                                <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
+                                    Special offers
+                                </span>
+                            )}
+                            {/* Load time indicator */}
+                            {recoLoadTime !== null && !recoLoading && (
+                                <span className="flex items-center gap-1 text-xs text-gray-400 ml-2">
+                                    <Clock className="w-3 h-3" />
+                                    {recoLoadTime < 1000
+                                        ? `${recoLoadTime}ms`
+                                        : `${(recoLoadTime / 1000).toFixed(1)}s`
+                                    }
+                                </span>
+                            )}
+                        </div>
+                        {!recoLoading && recommendations?.recommendations && recommendations.recommendations.length > 0 && (
+                            <Link to="/products?personalized=true" className="text-sm text-primary-600 hover:text-primary-700">
+                                See all
+                            </Link>
+                        )}
+                    </div>
+
+                    {/* Loading State */}
+                    {recoLoading && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {[...Array(5)].map((_, i) => (
+                                <div key={i} className="animate-pulse">
+                                    <div className="aspect-square bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl mb-3 flex items-center justify-center">
+                                        <div className="text-center">
+                                            <Sparkles className="w-6 h-6 text-amber-300 mx-auto mb-2 animate-pulse" />
+                                            <span className="text-xs text-amber-400">AI curating...</span>
+                                        </div>
+                                    </div>
+                                    <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
+                                    <div className="h-4 bg-gray-100 rounded w-1/2" />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Recommendations Loaded */}
+                    {!recoLoading && recommendations?.recommendations && recommendations.recommendations.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {recommendations.recommendations.slice(0, 5).map((product) => (
+                                <RecommendedProductCard
+                                    key={product.product_id}
+                                    product={product}
+                                    onAddToCart={addItem}
+                                    showDiscount={product.discount_percentage > 0}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Fallback to Featured Products */}
+                    {!recoLoading && (!recommendations?.recommendations || recommendations.recommendations.length === 0) && featuredProducts?.items && featuredProducts.items.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {featuredProducts.items.slice(0, 5).map((product) => (
+                                <ProductCard key={product.product_id} product={product} onAddToCart={addItem} />
+                            ))}
+                        </div>
+                    )}
+                </section>
+            )}
+
+            {/* Featured Products for non-authenticated users */}
+            {!isAuthenticated && featuredProducts?.items && featuredProducts.items.length > 0 && (
+                <section className="mb-10">
+                    <div className="flex items-baseline justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <Tag className="w-5 h-5 text-primary-500" />
+                            <h2 className="text-lg font-medium text-gray-900">Featured Products</h2>
+                        </div>
                         <Link to="/products?is_featured=true" className="text-sm text-primary-600 hover:text-primary-700">
                             See all
                         </Link>
@@ -167,13 +283,128 @@ export default function ProductsPage() {
     )
 }
 
+// Recommended Product Card with personalized pricing
+function RecommendedProductCard({
+    product,
+    onAddToCart,
+    showDiscount
+}: {
+    product: RecommendedProduct
+    onAddToCart: (product: any) => void
+    showDiscount: boolean
+}) {
+    const [imageError, setImageError] = useState(false)
+    const [isHovered, setIsHovered] = useState(false)
+
+    // Convert RecommendedProduct to cart-compatible format
+    const cartProduct = {
+        product_id: product.product_id,
+        name: product.name,
+        price: product.discounted_price, // Use discounted price
+        original_price: product.price,
+        images: product.image ? [product.image] : [],
+        category: product.category,
+        brand: product.brand,
+        rating: product.rating,
+        review_count: product.review_count,
+        stock_quantity: 100 // Assume in stock
+    }
+
+    return (
+        <div
+            className="group relative"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <Link to={`/products/${product.product_id}`}>
+                <div className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden mb-3">
+                    {!imageError && product.image ? (
+                        <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={() => setImageError(true)}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <ShoppingBag className="w-8 h-8 text-gray-300" />
+                        </div>
+                    )}
+                    {/* Personalized Discount Badge */}
+                    {showDiscount && product.discount_percentage > 0 && (
+                        <span className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
+                            <Tag className="w-3 h-3" />
+                            -{product.discount_percentage}%
+                        </span>
+                    )}
+                </div>
+            </Link>
+
+            <div className="space-y-1">
+                <p className="text-xs text-gray-500">{product.brand}</p>
+                <Link to={`/products/${product.product_id}`}>
+                    <h3 className="text-sm text-gray-900 font-medium line-clamp-2 leading-tight group-hover:text-primary-600 transition-colors">
+                        {product.name}
+                    </h3>
+                </Link>
+                <div className="flex items-center gap-1">
+                    <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                    <span className="text-xs text-gray-600">{product.rating.toFixed(1)}</span>
+                    <span className="text-xs text-gray-400">({product.review_count})</span>
+                </div>
+                {/* Pricing with discount */}
+                <div className="flex items-baseline gap-1.5">
+                    {showDiscount && product.discount_percentage > 0 ? (
+                        <>
+                            <span className="text-sm font-semibold text-amber-600">${product.discounted_price.toFixed(2)}</span>
+                            <span className="text-xs text-gray-400 line-through">${product.price.toFixed(2)}</span>
+                        </>
+                    ) : (
+                        <span className="text-sm font-semibold text-gray-900">${product.price.toFixed(2)}</span>
+                    )}
+                </div>
+                {/* Recommendation reason */}
+                {product.recommendation_reason && (
+                    <p className="text-xs text-gray-500 italic line-clamp-1">{product.recommendation_reason}</p>
+                )}
+            </div>
+
+            {/* Add to Cart - Shows on hover */}
+            <div className={`mt-2 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0 sm:opacity-0'}`}>
+                <button
+                    onClick={(e) => {
+                        e.preventDefault()
+                        onAddToCart(cartProduct)
+                    }}
+                    className="w-full py-2 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                    Add to cart
+                </button>
+            </div>
+
+            {/* Always visible on mobile */}
+            <div className="mt-2 sm:hidden">
+                <button
+                    onClick={(e) => {
+                        e.preventDefault()
+                        onAddToCart(cartProduct)
+                    }}
+                    className="w-full py-2 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                    Add to cart
+                </button>
+            </div>
+        </div>
+    )
+}
+
 // Separate ProductCard component for cleaner code
 function ProductCard({ product, onAddToCart }: { product: any; onAddToCart: (product: any) => void }) {
     const [imageError, setImageError] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
 
     return (
-        <div 
+        <div
             className="group"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}

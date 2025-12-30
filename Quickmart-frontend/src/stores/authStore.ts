@@ -10,6 +10,7 @@ interface AuthState {
     token: string | null
     isAuthenticated: boolean
     isLoading: boolean
+    loadingStage: 'idle' | 'authenticating'
 
     // Actions
     login: (credentials: LoginCredentials) => Promise<boolean>
@@ -26,9 +27,10 @@ export const useAuthStore = create<AuthState>()(
             token: null,
             isAuthenticated: false,
             isLoading: false,
+            loadingStage: 'idle' as const,
 
             login: async (credentials: LoginCredentials) => {
-                set({ isLoading: true })
+                set({ isLoading: true, loadingStage: 'authenticating' })
                 try {
                     const response: AuthResponse = await authApi.login(credentials)
                     console.log('Login response:', response)
@@ -43,6 +45,7 @@ export const useAuthStore = create<AuthState>()(
                         token: response.access_token,
                         isAuthenticated: true,
                         isLoading: false,
+                        loadingStage: 'idle',
                     })
 
                     toast.success(`Welcome back, ${getUserDisplayName(response.user)}!`)
@@ -59,11 +62,9 @@ export const useAuthStore = create<AuthState>()(
                         }
                     }
 
-                    // Note: Churn prediction is now handled automatically by the backend during login
-
                     return true
                 } catch (error: unknown) {
-                    set({ isLoading: false })
+                    set({ isLoading: false, loadingStage: 'idle' })
 
                     // Handle different error types
                     const errorObj = error as { response?: { data?: { detail?: string | object[] } } }

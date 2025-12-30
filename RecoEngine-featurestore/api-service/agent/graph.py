@@ -21,8 +21,10 @@ from .tools import (
 )
 from .checkpointer import get_aerospike_saver, get_checkpoint_config
 from .store_helper import get_aerospike_store, retrieve_all_user_features_async
+from .graph_logger import get_churn_logger, log_graph_start, log_graph_end, log_node
 
-logger = logging.getLogger(__name__)
+# Use dedicated churn graph logger
+logger = get_churn_logger()
 
 
 # Node Factory Functions - creates nodes with store captured in closure
@@ -34,7 +36,7 @@ def create_retrieve_features_node(store):
         """Node: Retrieve user features from the LangGraph Store."""
         user_id = state["user_id"]
         
-        logger.info(f"[Agent] Retrieving features for user {user_id} via LangGraph Store")
+        log_node(logger, "Features", f"Retrieving for user {user_id}")
         
         try:
             # Use the LangGraph Store to retrieve features
@@ -50,7 +52,7 @@ def create_retrieve_features_node(store):
                 AIMessage(content=f"[Feature Retrieval] {feature_summary}. Feature freshness: {freshness}")
             )
             
-            logger.info(f"[Agent] {feature_summary}")
+            log_node(logger, "Features", feature_summary)
             
         except Exception as e:
             state["error"] = f"Feature retrieval failed: {str(e)}"
@@ -67,7 +69,7 @@ def predict_churn_node(state: AgentState) -> AgentState:
     user_id = state["user_id"]
     features = state.get("user_features", {})
     
-    logger.info(f"[Agent] Predicting churn for user {user_id}")
+    log_node(logger, "Predict", f"Analyzing churn for user {user_id}")
     
     if not features:
         state["error"] = "No features available for prediction"
@@ -99,7 +101,7 @@ def predict_churn_node(state: AgentState) -> AgentState:
         )
         state["messages"].append(AIMessage(content=risk_msg))
         
-        logger.info(f"[Agent] {risk_msg}")
+        log_node(logger, "Predict", f"Result: {prediction['churn_probability']:.1%} churn, {prediction['risk_segment']}")
         
     except Exception as e:
         state["error"] = f"Churn prediction failed: {str(e)}"
@@ -114,7 +116,7 @@ def decide_nudge_node(state: AgentState) -> AgentState:
     user_id = state["user_id"]
     prediction = state.get("churn_prediction")
     
-    logger.info(f"[Agent] Deciding nudge for user {user_id}")
+    log_node(logger, "Decide", f"Evaluating nudge for user {user_id}")
     
     if not prediction:
         state["error"] = "No prediction available for nudge decision"
@@ -408,12 +410,15 @@ async def run_agent_prediction(
     Returns:
         Dictionary containing prediction results and nudge information
     """
+    log_graph_start(logger, "Churn Prediction", user_id, 
+                    checkpointer=use_checkpointer, store=use_store)
+    
     # Get or create checkpointer (using local checkpointer with async support)
     checkpointer = None
     if use_checkpointer and aerospike_client:
         try:
             checkpointer = get_aerospike_saver(client=aerospike_client)
-            logger.info("Aerospike checkpointer enabled with async support")
+            log_node(logger, "Init", "Aerospike checkpointer enabled")
         except Exception as e:
             logger.warning(f"Could not create checkpointer: {e}")
     
@@ -422,7 +427,7 @@ async def run_agent_prediction(
     if use_store and aerospike_client:
         try:
             store = get_aerospike_store(client=aerospike_client)
-            logger.info("Aerospike store enabled for feature retrieval")
+            log_node(logger, "Init", "Aerospike store enabled")
         except Exception as e:
             logger.warning(f"Could not create store: {e}")
     
@@ -462,13 +467,23 @@ async def run_agent_prediction(
         if result.get("generated_nudge"):
             response["generated_nudge"] = result["generated_nudge"]
         
+        # Log completion
+        churn_prob = result.get("churn_prediction", {}).get("churn_probability", 0)
+        risk = result.get("churn_prediction", {}).get("risk_segment", "unknown")
+        nudge_sent = result.get("nudge_decision", {}).get("should_nudge", False)
+        log_graph_end(logger, "Churn Prediction", user_id, success=True,
+                     churn_probability=f"{churn_prob:.1%}",
+                     risk_segment=risk,
+                     nudge_sent=nudge_sent)
+        
         return response
         
     except Exception as e:
         import traceback
         error_detail = str(e) if str(e) else f"{type(e).__name__}: {repr(e)}"
-        logger.error(f"Agent workflow failed for user {user_id}: {error_detail}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
+        logger.error(f"Workflow failed: {error_detail}")
+        log_graph_end(logger, "Churn Prediction", user_id, success=False,
+                     error=error_detail)
         return {
             "user_id": user_id,
             "workflow_completed": False,

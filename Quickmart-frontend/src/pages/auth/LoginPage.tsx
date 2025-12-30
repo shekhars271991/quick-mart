@@ -46,7 +46,7 @@ export default function LoginPage() {
                     <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />
                     <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
                 </div>
-                
+
                 <div className="relative z-10 flex flex-col justify-center px-16 text-white">
                     {/* Logo */}
                     <div className="flex items-center gap-3 mb-12">
@@ -60,7 +60,7 @@ export default function LoginPage() {
                         Shop Smarter,<br />
                         <span className="text-primary-200">Not Harder</span>
                     </h1>
-                    
+
                     <p className="text-xl text-primary-100 mb-12 max-w-md">
                         Experience personalized shopping with AI-powered recommendations tailored just for you.
                     </p>

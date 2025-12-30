@@ -186,6 +186,82 @@ class DatabaseManager:
         count = await self.count_records(set_name)
         return count == 0
     
+    # ============ LangGraph Store Format Methods ============
+    # These methods read data stored by LangGraph AerospikeStore
+    # Key format: {namespace}|{key}, data in 'value' bin
+    
+    async def get_from_store(self, set_name: str, namespace: str, key: str) -> Optional[Dict[str, Any]]:
+        """Get a record stored in LangGraph Store format.
+        
+        Args:
+            set_name: Aerospike set name
+            namespace: LangGraph namespace (e.g., 'products')
+            key: Record key (e.g., 'prod_001')
+        
+        Returns:
+            The record data from 'value' bin, or None if not found
+        """
+        try:
+            # LangGraph Store uses key format: namespace|key
+            store_key = f"{namespace}|{key}"
+            key_tuple = (self.namespace, set_name, store_key)
+            (key_tuple, metadata, bins) = self.client.get(key=key_tuple)
+            # LangGraph Store uses 'value' bin instead of 'data'
+            return bins.get('value') if bins else None
+        except aerospike.exception.RecordNotFound:
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get store record {namespace}|{key} from {set_name}: {e}")
+            return None
+    
+    async def scan_store_set(self, set_name: str, namespace: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Scan records stored in LangGraph Store format.
+        
+        Args:
+            set_name: Aerospike set name
+            namespace: LangGraph namespace to filter by (e.g., 'products')
+            limit: Optional limit on number of records
+        
+        Returns:
+            List of record data from 'value' bin
+        """
+        try:
+            records = []
+            scan = self.client.scan(self.namespace, set_name)
+            
+            def callback(input_tuple):
+                key, metadata, bins = input_tuple
+                if bins:
+                    # Check if this is a LangGraph Store record (has 'value' bin)
+                    # and matches the namespace
+                    record_namespace = bins.get('namespace', [])
+                    if isinstance(record_namespace, list) and record_namespace:
+                        if record_namespace[0] == namespace:
+                            value = bins.get('value')
+                            if value and isinstance(value, dict):
+                                records.append(value)
+            
+            scan.foreach(callback)
+            
+            if limit:
+                return records[:limit]
+            return records
+            
+        except Exception as e:
+            logger.error(f"Failed to scan store set {set_name} for namespace {namespace}: {e}")
+            return []
+    
+    async def store_exists(self, set_name: str, namespace: str, key: str) -> bool:
+        """Check if a LangGraph Store record exists."""
+        try:
+            store_key = f"{namespace}|{key}"
+            key_tuple = (self.namespace, set_name, store_key)
+            (key_tuple, metadata) = self.client.exists(key_tuple)
+            return metadata is not None
+        except Exception as e:
+            logger.error(f"Failed to check store existence of {namespace}|{key} in {set_name}: {e}")
+            return False
+    
     async def store_coupon(self, coupon) -> bool:
         """Store a coupon in the database"""
         try:
