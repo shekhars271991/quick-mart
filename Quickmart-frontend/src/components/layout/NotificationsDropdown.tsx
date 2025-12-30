@@ -39,12 +39,6 @@ export default function NotificationsDropdown() {
         }
     }
 
-    const getChurnColor = (probability: number) => {
-        if (probability >= 0.8) return 'text-red-600 bg-red-50'
-        if (probability >= 0.6) return 'text-orange-600 bg-orange-50'
-        return 'text-yellow-600 bg-yellow-50'
-    }
-
     return (
         <div className="relative" ref={dropdownRef}>
             {/* Notification Bell Button */}
@@ -115,17 +109,6 @@ export default function NotificationsDropdown() {
                                                 <p className="text-sm text-gray-900 mb-2 leading-relaxed">
                                                     {message.message}
                                                 </p>
-
-                                                {/* Churn Info */}
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span
-                                                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${getChurnColor(
-                                                            message.churn_probability
-                                                        )}`}
-                                                    >
-                                                        {(message.churn_probability * 100).toFixed(0)}% churn risk
-                                                    </span>
-                                                </div>
 
                                                 {/* Timestamp */}
                                                 <p className="text-xs text-gray-400">

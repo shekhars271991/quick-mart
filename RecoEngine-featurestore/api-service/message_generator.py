@@ -28,11 +28,12 @@ class MessageGenerator:
             try:
                 # Use configured model (default: gemini-1.5-flash for faster, cost-effective generation)
                 # Alternative: "gemini-1.5-pro" for higher quality (slower, more expensive)
+                # Higher temperature (0.9) for more creative, varied message generation
                 self.llm = ChatGoogleGenerativeAI(
                     model=self.model_name,
                     google_api_key=self.api_key,
-                    temperature=0.7,
-                    max_output_tokens=10000  # Increased from 200 to allow for longer messages
+                    temperature=0.9,  # Higher for more creativity
+                    max_output_tokens=10000
                 )
                 logger.info(f"Initialized Gemini LLM ({self.model_name}) for message generation")
             except Exception as e:
@@ -110,35 +111,36 @@ class MessageGenerator:
             product_name = cart_items[0].get('name', '') if cart_items else ''
             age = user_features.get('age', 30)
             
-            prompt = f"""Create a personalized SMS for cart abandonment. Use the customer's name and reference their specific product.
+            # Use timestamp for variety in message style
+            import random
+            style_seed = random.randint(1, 6)
+            
+            prompt = f"""Create a UNIQUE, personalized SMS for cart abandonment. Be creative and avoid generic phrases!
 
 CUSTOMER DATA:
-Name: {name if name else 'NOT PROVIDED'}
+Name: {name if name else 'Customer'}
 Age: {age}
-Cart Item: {product_name if product_name else 'NOT PROVIDED'}
+Cart Item: {product_name if product_name else 'their selected item'}
 {user_context}
 
-STRICT RULES:
-1. START WITH NAME: If name provided, begin message with it. Examples:
-   - "Hey Sarah!" or "Sarah,"
-   - "Mike," or "Hi Mike!"
-   
-2. MENTION PRODUCT: If cart item provided, reference it specifically:
-   - "your Nike sneakers"
-   - "that laptop you picked"
-   - "the wireless earbuds"
+MESSAGE STYLE #{style_seed} - Pick ONE approach:
+1. CURIOSITY: "Still thinking about [product]? It's calling your name!"
+2. URGENCY (soft): "[Name], your cart misses you! [Product] won't wait forever"
+3. PLAYFUL: "Psst! [Product] is getting lonely in your cart 😊"
+4. HELPFUL: "[Name], need help deciding? Your [product] is saved & ready"
+5. FOMO: "Others are eyeing [product] too! Secure yours now"
+6. DIRECT: "[Name], one click away from [product]. Ready when you are!"
 
-3. AGE-APPROPRIATE TONE:
-   - Age 18-25: Casual + emojis → "Hey Mike! Don't miss out on those sneakers 🔥"
-   - Age 26-40: Friendly → "Sarah, your laptop is still available. Complete checkout now!"
-   - Age 40-60: Professional → "Robert, your order is ready. Finish your purchase today."
-   - Age 60+: Clear, formal → "Hello Margaret, your items await. Please complete your order."
+REQUIREMENTS:
+- Use the customer's NAME naturally (not forced)
+- Reference the SPECIFIC product (not generic "items")
+- Match tone to age ({age}): young=casual+emoji, middle=friendly, older=professional
+- MAX 160 characters
+- NO discount mentions
+- Include subtle call-to-action
+- BE CREATIVE - no repetitive phrases!
 
-4. MAX 160 characters
-5. Do NOT mention discounts
-6. Include call-to-action (checkout, complete order, etc.)
-
-Write ONE SMS exactly as it would be sent (max 160 chars):"""
+Write ONE unique SMS (max 160 chars):"""
         else:
             # Extract name and age for explicit use
             name = user_features.get('name') or user_features.get('full_name', '')
@@ -153,36 +155,37 @@ Write ONE SMS exactly as it would be sent (max 160 chars):"""
             else:
                 cust_type = "frequent customer"
             
-            prompt = f"""Create a personalized brand engagement SMS for QuickMart. Use the customer's name.
+            # Use random seed for variety
+            import random
+            style_seed = random.randint(1, 8)
+            
+            prompt = f"""Create a UNIQUE, creative engagement SMS for QuickMart. Avoid generic marketing speak!
 
 CUSTOMER DATA:
-Name: {name if name else 'NOT PROVIDED'}
+Name: {name if name else 'Friend'}
 Age: {age}
 Customer Type: {cust_type}
 {user_context}
 
-STRICT RULES:
-1. START WITH NAME: If name provided, begin with it. Examples:
-   - "Hi Emily!" or "Emily,"
-   - "Hey Tom!" or "Tom,"
-   
-2. AGE-APPROPRIATE TONE & LANGUAGE:
-   - Age 18-25: Casual + emoji → "Hey Tom! Check out our new drops 🔥 Shop now!"
-   - Age 26-40: Friendly → "Sarah, discover something special today at QuickMart!"
-   - Age 40-60: Professional → "Robert, quality products waiting for you at QuickMart."
-   - Age 60+: Clear, respectful → "Hello Margaret, shop our trusted collection today."
+MESSAGE STYLE #{style_seed} - Pick ONE creative approach:
+1. EXCITEMENT: "[Name]! Something amazing just dropped. You'll love it! 🎉"
+2. PERSONALIZED: "Hey [Name], we picked these just for you. Take a peek?"
+3. SEASONAL: "[Name], perfect timing! Fresh picks for the season await"
+4. DISCOVERY: "Psst [Name]! Hidden gems waiting to be found. Explore now"
+5. VIP FEEL: "[Name], as one of our favorites, see this first!"
+6. QUESTION: "[Name], ready for something new? We've got surprises!"
+7. STORY: "[Name], your next favorite thing is one tap away..."
+8. CASUAL CHECK-IN: "Hey [Name]! Been a minute. See what's new? 👀"
 
-3. MESSAGE STYLE (vary based on customer):
-   - First-time visitor: Welcoming, inviting tone
-   - Occasional: Friendly reminder about value
-   - Frequent: Appreciation + new arrivals
-   - NO "miss you" or "come back" (they're active!)
+REQUIREMENTS:
+- Use NAME naturally (not robotic)
+- Match tone to age ({age}): 18-25=casual+emoji, 26-40=warm, 40+=polished
+- {cust_type.upper()}: Tailor message accordingly
+- MAX 160 characters
+- NO discount/promo mentions
+- BE ORIGINAL - each message should feel fresh!
 
-4. MAX 160 characters
-5. Do NOT mention discounts or promotions
-6. Include call-to-action (shop, explore, discover, browse)
-
-Write ONE SMS exactly as it would be sent (max 160 chars):"""
+Write ONE unique SMS (max 160 chars):"""
 
 
         print(prompt)
