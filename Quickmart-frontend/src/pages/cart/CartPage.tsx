@@ -1,5 +1,5 @@
 import { ArrowRight, Minus, Plus, ShoppingBag, Sparkles, Trash2, TruckIcon } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import RecentCouponDisplay from '../../components/RecentCouponDisplay'
 import { useRecentCoupon } from '../../hooks/useRecentCoupon'
@@ -12,9 +12,15 @@ export default function CartPage() {
     const { isAuthenticated, user } = useAuthStore()
     const { recentCoupon, loading: couponLoading, refetch: refetchCoupon } = useRecentCoupon()
 
-    // Notify backend when cart page loads (triggers churn prediction which may generate coupons)
+    // Track if we've already notified backend for this page visit
+    const hasNotifiedRef = useRef(false)
+
+    // Notify backend ONCE when cart page loads (triggers churn prediction which may generate coupons)
     useEffect(() => {
-        if (isAuthenticated && user?.user_id && items.length > 0) {
+        // Only notify once per page visit, and only if user is authenticated with items in cart
+        if (!hasNotifiedRef.current && isAuthenticated && user?.user_id && items.length > 0) {
+            hasNotifiedRef.current = true  // Mark as notified
+
             // Prepare cart items for backend
             const cartItems = items.map(item => ({
                 product_id: item.product_id,
@@ -35,7 +41,7 @@ export default function CartPage() {
                     console.log('Cart load notification failed:', err.message)
                 })
         }
-    }, [isAuthenticated, user?.user_id, items.length, subtotal, refetchCoupon])
+    }, [isAuthenticated, user?.user_id, items, subtotal, refetchCoupon])
 
     if (items.length === 0) {
         return (
